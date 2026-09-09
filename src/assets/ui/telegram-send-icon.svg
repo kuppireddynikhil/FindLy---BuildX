@@ -1,0 +1,15 @@
+<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g filter="url(#tg-shadow)">
+    <circle cx="30" cy="26" r="20" fill="url(#tg-grad)"/>
+    <path d="M37 19L22 26L28 29.5L34 23L29.5 31L32.5 35L37 19Z" fill="white" stroke="white" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+  </g>
+  <defs>
+    <linearGradient id="tg-grad" x1="10" y1="6" x2="50" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <filter id="tg-shadow" x="0" y="0" width="60" height="60" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#2563EB" flood-opacity="0.25" />
+    </filter>
+  </defs>
+</svg>

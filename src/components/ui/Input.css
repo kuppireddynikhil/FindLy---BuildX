@@ -1,0 +1,113 @@
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.input-group__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.input-group:focus-within .input-group__label {
+  color: var(--accent-primary);
+}
+
+.input-group__wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group__icon {
+  position: absolute;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color var(--transition-fast);
+  z-index: 1;
+}
+
+.input-group__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.input-group:focus-within .input-group__icon {
+  color: var(--accent-primary);
+}
+
+.input-group__input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.input-group__input--with-icon {
+  padding-left: 44px;
+}
+
+.input-group__input:hover {
+  border-color: var(--border-medium);
+}
+
+.input-group__input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-light);
+}
+
+.input-group__input::placeholder {
+  color: var(--text-muted);
+}
+
+.input-group__select {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239d9dba' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+}
+
+.input-group__select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.input-group__textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* Error state */
+.input-group--error .input-group__input {
+  border-color: var(--accent-danger);
+}
+
+.input-group--error .input-group__input:focus {
+  box-shadow: 0 0 0 3px var(--accent-danger-light);
+}
+
+.input-group--error .input-group__label {
+  color: var(--accent-danger);
+}
+
+.input-group__error {
+  font-size: 0.8125rem;
+  color: var(--accent-danger);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

@@ -1,0 +1,115 @@
+[33m542feec[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m seperated images into a structured folder
+ src/assets/{ => backgrounds}/campus-skyline-background.png  | Bin
+ src/assets/{ => backgrounds}/cta-banner-background.png      | Bin
+ src/assets/{ => backgrounds}/findly-network-background.png  | Bin
+ src/assets/{ => backgrounds}/hero-section-background.png    | Bin
+ src/assets/{ => backgrounds}/login-page-radar-network.png   | Bin
+ .../{ => backgrounds}/problem-section-card-background.png   | Bin
+ src/assets/{ => backgrounds}/sign-up-background-network.png | Bin
+ .../{ => backgrounds}/soft-login-gradient-background.png    | Bin
+ .../additional-found-item-pack.png}                         | Bin
+ src/assets/{ => decorative}/cta-footer-assets-pack.png      | Bin
+ src/assets/{ => decorative}/decorative-cloud-pack.png       | Bin
+ .../{ => decorative}/feed-decorative-illustration.png       | Bin
+ src/assets/{ => decorative}/hero-decorative-leaves.png      | Bin
+ src/assets/{ => decorative}/login-decorative-elements.png   | Bin
+ src/assets/{ => illustrations}/findly-matching-network.png  | Bin
+ .../{ => illustrations}/hard-to-recover-illustration.png    | Bin
+ .../{ => illustrations}/large-verification-shield.png       | Bin
+ src/assets/{ => illustrations}/main-hero-student.png        | Bin
+ src/assets/{ => illustrations}/no-central-system.png        | Bin
+ src/assets/{ => illustrations}/student-using-laptop.png     | Bin
+ src/assets/{ => illustrations}/unclaimed-items-box.png      | Bin
+ src/assets/{ => illustrations}/word-of-mouth.png            | Bin
+ src/assets/{ => items}/black-wallet.png                     | Bin
+ src/assets/{ => items}/blue-backpack.png                    | Bin
+ src/assets/{ => items}/blue-water-bottle.png                | Bin
+ src/assets/{ => items}/car-keys-with-keychain.png           | Bin
+ src/assets/{ => items}/smartphone-showing-found-item.png    | Bin
+ src/assets/{ => items}/student-id-card-detailed.png         | Bin
+ src/assets/{ => items}/student-id-card.png                  | Bin
+ src/assets/{ => ui}/account-created-success-card.png        | Bin
+ src/assets/{ => ui}/feature-strip-icons-pack.png            | Bin
+ src/assets/{ => ui}/floating-search-icon-card.png           | Bin
+ src/assets/{ => ui}/item-matched-success-card.png           | Bin
+ src/assets/{ => ui}/notification-bell-floating-card.png     | Bin
+ src/assets/{ => ui}/secure-login-floating-card.png          | Bin
+ src/assets/{ => ui}/security-features-card.png              | Bin
+ 36 files changed, 0 insertions(+), 0 deletions(-)
+[33ma835fce[m renaming the images in assets
+ ...uccess Card.png => account-created-success-card.png} | Bin
+ ...Feed Item Pack.png => additional-feed-item-pack.png} | Bin
+ src/assets/{Black Wallet.png => black-wallet.png}       | Bin
+ src/assets/{Blue Backpack.png => blue-backpack.png}     | Bin
+ .../{Blue Water Bottle.png => blue-water-bottle.png}    | Bin
+ ...ine Background.png => campus-skyline-background.png} | Bin
+ ...eys With Keychain.png => car-keys-with-keychain.png} | Bin
+ ... Banner Background.png => cta-banner-background.png} | Bin
+ ...ooter Assets Pack.png => cta-footer-assets-pack.png} | Bin
+ ...orative Cloud Pack.png => decorative-cloud-pack.png} | Bin
+ ...trip Icons Pack.png => feature-strip-icons-pack.png} | Bin
+ ...llustration.png => feed-decorative-illustration.png} | Bin
+ ...Matching Network.png => findly-matching-network.png} | Bin
+ ...ork Background.png => findly-network-background.png} | Bin
+ ...arch Icon Card.png => floating-search-icon-card.png} | Bin
+ ...llustration.png => hard-to-recover-illustration.png} | Bin
+ ...Decorative Leaves.png => hero-decorative-leaves.png} | Bin
+ ...ction Background.png => hero-section-background.png} | Bin
+ src/assets/hero.png                                     | Bin [31m13057[m -> [32m0[m bytes
+ ...d Success Card.png => item-matched-success-card.png} | Bin
+ ...ication Shield.png => large-verification-shield.png} | Bin
+ ...ative Elements.png => login-decorative-elements.png} | Bin
+ ...e Radar Network.png => login-page-radar-network.png} | Bin
+ .../{Main Hero Student.png => main-hero-student.png}    | Bin
+ .../{No Central System.png => no-central-system.png}    | Bin
+ ...ing Card.png => notification-bell-floating-card.png} | Bin
+ ...ckground.png => problem-section-card-background.png} | Bin
+ ...Floating Card.png => secure-login-floating-card.png} | Bin
+ ...ity Features Card.png => security-features-card.png} | Bin
+ ...round Network.png => sign-up-background-network.png} | Bin
+ ...Found Item.png => smartphone-showing-found-item.png} | Bin
+ ...ackground.png => soft-login-gradient-background.png} | Bin
+ ...tailed Version).png => student-id-card-detailed.png} | Bin
+ src/assets/{Student ID Card.png => student-id-card.png} | Bin
+ ...tudent Using Laptop.png => student-using-laptop.png} | Bin
+ ...{Unclaimed Items Box.png => unclaimed-items-box.png} | Bin
+ src/assets/{Word Of Mouth.png => word-of-mouth.png}     | Bin
+ 37 files changed, 0 insertions(+), 0 deletions(-)
+[33m89a4576[m Added supportive images in the assets
+ src/assets/Account Created Success Card.png       | Bin [31m0[m -> [32m2130116[m bytes
+ src/assets/Additional Feed Item Pack.png          | Bin [31m0[m -> [32m2418530[m bytes
+ src/assets/Black Wallet.png                       | Bin [31m0[m -> [32m2455905[m bytes
+ src/assets/Blue Backpack.png                      | Bin [31m0[m -> [32m2274193[m bytes
+ src/assets/Blue Water Bottle.png                  | Bin [31m0[m -> [32m2113748[m bytes
+ src/assets/CTA Banner Background.png              | Bin [31m0[m -> [32m2167043[m bytes
+ src/assets/CTA Footer Assets Pack.png             | Bin [31m0[m -> [32m2283848[m bytes
+ src/assets/Campus Skyline Background.png          | Bin [31m0[m -> [32m2021746[m bytes
+ src/assets/Car Keys With Keychain.png             | Bin [31m0[m -> [32m2321836[m bytes
+ src/assets/Decorative Cloud Pack.png              | Bin [31m0[m -> [32m2169848[m bytes
+ src/assets/FINDLY Matching Network.png            | Bin [31m0[m -> [32m2279127[m bytes
+ src/assets/FINDLY Network Background.png          | Bin [31m0[m -> [32m2066813[m bytes
+ src/assets/Feature Strip Icons Pack.png           | Bin [31m0[m -> [32m2248642[m bytes
+ src/assets/Feed Decorative Illustration.png       | Bin [31m0[m -> [32m2302953[m bytes
+ src/assets/Floating Search Icon Card.png          | Bin [31m0[m -> [32m2107104[m bytes
+ src/assets/Hard To Recover Illustration.png       | Bin [31m0[m -> [32m2360914[m bytes
+ src/assets/Hero Decorative Leaves.png             | Bin [31m0[m -> [32m2174235[m bytes
+ src/assets/Hero Section Background.png            | Bin [31m0[m -> [32m2356449[m bytes
+ src/assets/Item Matched Success Card.png          | Bin [31m0[m -> [32m2133715[m bytes
+ src/assets/Large Verification Shield.png          | Bin [31m0[m -> [32m2180662[m bytes
+ src/assets/Login Decorative Elements.png          | Bin [31m0[m -> [32m2187045[m bytes
+ src/assets/Login Page Radar Network.png           | Bin [31m0[m -> [32m2291113[m bytes
+ src/assets/Main Hero Student.png                  | Bin [31m0[m -> [32m2225044[m bytes
+ src/assets/No Central System.png                  | Bin [31m0[m -> [32m2170712[m bytes
+ src/assets/Notification Bell Floating Card.png    | Bin [31m0[m -> [32m2174198[m bytes
+ src/assets/Problem Section Card Background.png    | Bin [31m0[m -> [32m2041735[m bytes
+ src/assets/Secure Login Floating Card.png         | Bin [31m0[m -> [32m2121223[m bytes
+ src/assets/Security Features Card.png             | Bin [31m0[m -> [32m2201932[m bytes
+ src/assets/Sign Up Background Network.png         | Bin [31m0[m -> [32m2196780[m bytes
+ src/assets/Smartphone Showing Found Item.png      | Bin [31m0[m -> [32m2279389[m bytes
+ src/assets/Soft Login Gradient Background.png     | Bin [31m0[m -> [32m2142311[m bytes
+ src/assets/Student ID Card (Detailed Version).png | Bin [31m0[m -> [32m2199566[m bytes
+ src/assets/Student ID Card.png                    | Bin [31m0[m -> [32m2169250[m bytes
+ src/assets/Student Using Laptop.png               | Bin [31m0[m -> [32m2330468[m bytes
+ src/assets/Unclaimed Items Box.png                | Bin [31m0[m -> [32m2353104[m bytes
+ src/assets/Word Of Mouth.png                      | Bin [31m0[m -> [32m2428511[m bytes
+ 36 files changed, 0 insertions(+), 0 deletions(-)

@@ -1,0 +1,250 @@
+.homepage {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hero Section */
+.homepage__hero {
+  position: relative;
+  padding: 100px 0 120px;
+  text-align: center;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.homepage__hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+}
+
+.orb--1 {
+  top: 10%;
+  left: 15%;
+  width: 300px;
+  height: 300px;
+  background: var(--accent-primary);
+  animation: float 8s ease-in-out infinite alternate;
+}
+
+.orb--2 {
+  bottom: 15%;
+  right: 15%;
+  width: 350px;
+  height: 350px;
+  background: var(--accent-secondary);
+  animation: float 10s ease-in-out infinite alternate-reverse;
+}
+
+.homepage__hero-content {
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.homepage__hero-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.homepage__hero-subtitle {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  max-width: 680px;
+  line-height: 1.6;
+}
+
+.homepage__hero-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* Common Section Header */
+.homepage__section-header {
+  text-align: center;
+  margin-bottom: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* How It Works Section */
+.homepage__how {
+  padding: 80px 24px;
+}
+
+.homepage__how-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.homepage__how-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.homepage__how-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius);
+}
+
+.color-red {
+  background: var(--accent-danger-light);
+  color: var(--accent-danger);
+}
+
+.color-purple {
+  background: var(--accent-primary-light);
+  color: var(--accent-primary);
+}
+
+.color-green {
+  background: var(--accent-success-light);
+  color: var(--accent-success);
+}
+
+.homepage__how-number {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  font-size: 2.5rem;
+  font-weight: 800;
+  opacity: 0.05;
+  color: var(--text-primary);
+}
+
+.homepage__how-card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.homepage__how-card-desc {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Stats Section */
+.homepage__stats {
+  padding: 40px 24px;
+}
+
+.homepage__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.homepage__stat-card {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.homepage__stat-num {
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.homepage__stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Recent Items Section */
+.homepage__recent {
+  padding: 80px 24px;
+}
+
+.homepage__recent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-bottom: 48px;
+}
+
+.homepage__recent-actions {
+  display: flex;
+  justify-content: center;
+}
+
+/* Responsive design */
+@media (max-width: 992px) {
+  .homepage__how-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .homepage__stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .homepage__recent-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .homepage__hero-title {
+    font-size: 2.5rem;
+  }
+
+  .homepage__hero-subtitle {
+    font-size: 1.05rem;
+  }
+
+  .homepage__hero-actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .homepage__hero-actions > * {
+    width: 100%;
+  }
+
+  .homepage__hero-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .homepage__stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .homepage__recent-grid {
+    grid-template-columns: 1fr;
+  }
+}

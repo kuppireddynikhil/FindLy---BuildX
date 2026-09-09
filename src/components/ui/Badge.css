@@ -1,0 +1,43 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge--success {
+  background: var(--accent-success-light);
+  color: var(--accent-success);
+}
+
+.badge--warning {
+  background: var(--accent-warning-light);
+  color: var(--accent-warning);
+}
+
+.badge--danger {
+  background: var(--accent-danger-light);
+  color: var(--accent-danger);
+}
+
+.badge--info {
+  background: var(--accent-primary-light);
+  color: var(--accent-primary);
+}
+
+.badge--lost {
+  background: var(--accent-danger-light);
+  color: var(--accent-danger);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.badge--found {
+  background: var(--accent-success-light);
+  color: var(--accent-success);
+  border: 1px solid rgba(0, 184, 148, 0.2);
+}
