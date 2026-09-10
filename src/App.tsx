@@ -1,22 +1,14 @@
-<<<<<<< HEAD
 import { Navigate, Routes, Route } from 'react-router-dom';
-=======
-import { Routes, Route } from 'react-router-dom';
->>>>>>> origin/main
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
-<<<<<<< HEAD
 
 // Preserved Public / Auth Pages
-=======
->>>>>>> origin/main
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
-<<<<<<< HEAD
 
 // Authenticated Student Pages
 import { CampusFeedPage } from './pages/CampusFeedPage';
@@ -58,21 +50,6 @@ function App() {
       <main className={`app__main flex-1 ${isLandingOrAuthOrAdmin ? '' : 'pt-20'}`}>
         <Routes>
           {/* 1. Public / Preserved Landing & Auth */}
-=======
-import { ReportLostPage } from './pages/ReportLostPage';
-import { ReportFoundPage } from './pages/ReportFoundPage';
-import { SearchPage } from './pages/SearchPage';
-import { MyReportsPage } from './pages/MyReportsPage';
-import { AdminDashboardPage } from './pages/AdminDashboardPage';
-import './App.css';
-
-function App() {
-  return (
-    <div className="app">
-      <Navbar />
-      <main className="app__main">
-        <Routes>
->>>>>>> origin/main
           <Route path="/" element={<HomePage />} />
           <Route
             path="/login"
@@ -98,7 +75,6 @@ function App() {
               </PublicRoute>
             }
           />
-<<<<<<< HEAD
 
           {/* 2. Authenticated Student / Campus Ecosystem */}
           <Route
@@ -115,18 +91,10 @@ function App() {
             element={
               <ProtectedRoute>
                 <CampusExplorerPage />
-=======
-          <Route
-            path="/report/lost"
-            element={
-              <ProtectedRoute>
-                <ReportLostPage />
->>>>>>> origin/main
               </ProtectedRoute>
             }
           />
           <Route
-<<<<<<< HEAD
             path="/search"
             element={
               <ProtectedRoute>
@@ -152,16 +120,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-=======
-            path="/report/found"
-            element={
-              <ProtectedRoute>
-                <ReportFoundPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/search" element={<SearchPage />} />
->>>>>>> origin/main
           <Route
             path="/my-reports"
             element={
@@ -171,7 +129,6 @@ function App() {
             }
           />
           <Route
-<<<<<<< HEAD
             path="/messages"
             element={
               <ProtectedRoute>
@@ -209,16 +166,10 @@ function App() {
             path="/admin"
             element={
               <ProtectedRoute requiredRole="admin">
-=======
-            path="/admin"
-            element={
-              <ProtectedRoute>
->>>>>>> origin/main
                 <AdminDashboardPage />
               </ProtectedRoute>
             }
           />
-<<<<<<< HEAD
           <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
           <Route
             path="/admin/reports"
@@ -271,8 +222,6 @@ function App() {
 
           {/* 4. Catch-all fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
-=======
->>>>>>> origin/main
         </Routes>
       </main>
       <Footer />

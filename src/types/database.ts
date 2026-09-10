@@ -3,11 +3,7 @@
 
 export type ItemType = 'lost' | 'found';
 export type ItemStatus = 'open' | 'resolved' | 'claimed';
-<<<<<<< HEAD
 export type UserRole = 'user' | 'admin' | 'super_admin';
-=======
-export type UserRole = 'user' | 'admin';
->>>>>>> origin/main
 
 export interface Profile {
   id: string;

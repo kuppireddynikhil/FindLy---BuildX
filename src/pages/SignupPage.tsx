@@ -81,11 +81,7 @@ export function SignupPage() {
 
     setLoading(true);
     try {
-<<<<<<< HEAD
       const { error } = await signUp(email, password, fullName, phone);
-=======
-      const { error } = await signUp(email, password, fullName);
->>>>>>> origin/main
       if (error) throw error;
       addToast('Account created successfully. Please login to continue.', 'success');
       navigate('/login');

@@ -4,18 +4,11 @@ import type { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
   children?: ReactNode;
-<<<<<<< HEAD
   requiredRole?: 'user' | 'admin' | 'super_admin';
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const { isAuthenticated, loading, role } = useAuth();
-=======
-}
-
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, loading } = useAuth();
->>>>>>> origin/main
 
   if (loading) {
     return (
@@ -23,13 +16,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         <div style={{
           width: 40,
           height: 40,
-<<<<<<< HEAD
           border: '3px solid var(--border-subtle, #e2e8f0)',
           borderTopColor: 'var(--accent-primary, #2F7BFF)',
-=======
-          border: '3px solid var(--border-subtle)',
-          borderTopColor: 'var(--accent-primary)',
->>>>>>> origin/main
           borderRadius: '50%',
           animation: 'spin 0.7s linear infinite',
         }} className="animate-spin" />
@@ -41,7 +29,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-<<<<<<< HEAD
   if (requiredRole === 'admin' || requiredRole === 'super_admin') {
     const isAdmin = role === 'admin' || role === 'super_admin';
     if (!isAdmin) {
@@ -49,7 +36,5 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
   }
 
-=======
->>>>>>> origin/main
   return children ? <>{children}</> : <Outlet />;
 }
