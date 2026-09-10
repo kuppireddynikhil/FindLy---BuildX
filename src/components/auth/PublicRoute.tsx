@@ -7,11 +7,7 @@ interface PublicRouteProps {
 }
 
 export function PublicRoute({ children }: PublicRouteProps) {
-<<<<<<< HEAD
   const { isAuthenticated, loading, role } = useAuth();
-=======
-  const { isAuthenticated, loading } = useAuth();
->>>>>>> origin/main
 
   if (loading) {
     return (
@@ -29,11 +25,7 @@ export function PublicRoute({ children }: PublicRouteProps) {
   }
 
   if (isAuthenticated) {
-<<<<<<< HEAD
     return <Navigate to={role === 'admin' ? '/admin/dashboard' : '/dashboard'} replace />;
-=======
-    return <Navigate to="/" replace />;
->>>>>>> origin/main
   }
 
   return children ? <>{children}</> : <Outlet />;
