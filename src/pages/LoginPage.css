@@ -6,10 +6,14 @@
   display: grid;
   grid-template-columns: 55fr 45fr;
   min-height: 100vh;
+<<<<<<< HEAD
   background:
     radial-gradient(circle at 12% 20%, rgba(56, 189, 248, 0.12), transparent 30%),
     radial-gradient(circle at 88% 82%, rgba(6, 182, 212, 0.1), transparent 32%),
     #F8FAFC;
+=======
+  background-color: #F8FAFC;
+>>>>>>> origin/main
   overflow: hidden;
   font-family: 'Inter', 'Outfit', system-ui, sans-serif;
 }
@@ -27,7 +31,11 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
+<<<<<<< HEAD
   background-color: rgba(248, 250, 252, 0.82);
+=======
+  background-color: #F8FAFC;
+>>>>>>> origin/main
   z-index: 10;
 }
 
@@ -35,10 +43,17 @@
   width: 100%;
   max-width: 520px;
   background-color: #FFFFFF;
+<<<<<<< HEAD
   border-radius: 28px;
   padding: 48px;
   box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.06),
               0 4px 12px -2px rgba(15, 23, 42, 0.03);
+=======
+  border-radius: 32px;
+  padding: 48px;
+  box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.08), 
+              0 0 2px 1px rgba(15, 23, 42, 0.01);
+>>>>>>> origin/main
   border: 1px solid #E2E8F0;
   display: flex;
   flex-direction: column;
@@ -46,16 +61,28 @@
 }
 
 .login-form-card:hover {
+<<<<<<< HEAD
   box-shadow: 0 20px 40px -4px rgba(15, 23, 42, 0.1),
               0 8px 20px -4px rgba(15, 23, 42, 0.05);
+=======
+  box-shadow: 0 30px 60px -15px rgba(15, 23, 42, 0.12),
+              0 0 3px 1px rgba(15, 23, 42, 0.02);
+>>>>>>> origin/main
 }
 
 /* Form Headings */
 .login-welcome-title {
+<<<<<<< HEAD
   font-size: 2.125rem;
   font-weight: 800;
   color: #0F172A;
   letter-spacing: -0.02em;
+=======
+  font-size: 2.25rem;
+  font-weight: 850;
+  color: #0F172A;
+  letter-spacing: -0.03em;
+>>>>>>> origin/main
   line-height: 1.15;
   margin-bottom: 12px;
 }
@@ -64,7 +91,11 @@
   font-size: 0.9375rem;
   line-height: 1.6;
   color: #475569;
+<<<<<<< HEAD
   font-weight: 600;
+=======
+  font-weight: 500;
+>>>>>>> origin/main
   margin-bottom: 32px;
 }
 
@@ -99,12 +130,20 @@
 .login-forgot-link {
   font-size: 0.875rem;
   font-weight: 700;
+<<<<<<< HEAD
   color: #06B6D4;
+=======
+  color: #2563EB;
+>>>>>>> origin/main
   transition: color 0.2s ease;
 }
 
 .login-forgot-link:hover {
+<<<<<<< HEAD
   color: #0891B2;
+=======
+  color: #1d4ed8;
+>>>>>>> origin/main
 }
 
 /* Dividers */
@@ -148,14 +187,22 @@
 }
 
 .login-signup-link {
+<<<<<<< HEAD
   color: #06B6D4;
+=======
+  color: #2563EB;
+>>>>>>> origin/main
   font-weight: 700;
   margin-left: 6px;
   transition: color 0.2s ease;
 }
 
 .login-signup-link:hover {
+<<<<<<< HEAD
   color: #0891B2;
+=======
+  color: #1d4ed8;
+>>>>>>> origin/main
   text-decoration: underline;
 }
 

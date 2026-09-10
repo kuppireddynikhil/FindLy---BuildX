@@ -5,13 +5,19 @@ import { Input, Select, Textarea } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
 import { ITEM_CATEGORIES, CAMPUS_LOCATIONS } from '../types/database';
+<<<<<<< HEAD
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
+=======
+>>>>>>> origin/main
 import './ReportFoundPage.css';
 
 export function ReportFoundPage() {
   const { addToast } = useToast();
+<<<<<<< HEAD
   const { user } = useAuth();
+=======
+>>>>>>> origin/main
   const navigate = useNavigate();
 
   const [title, setTitle] = useState('');
@@ -21,7 +27,10 @@ export function ReportFoundPage() {
   const [date, setDate] = useState('');
   const [contactInfo, setContactInfo] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+<<<<<<< HEAD
   const [imageFile, setImageFile] = useState<File | null>(null);
+=======
+>>>>>>> origin/main
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -31,7 +40,10 @@ export function ReportFoundPage() {
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+<<<<<<< HEAD
       setImageFile(file);
+=======
+>>>>>>> origin/main
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -47,10 +59,13 @@ export function ReportFoundPage() {
     if (!location) newErrors.location = 'Found location is required';
     if (!date) newErrors.date = 'Date found is required';
     if (!contactInfo.trim()) newErrors.contactInfo = 'Contact/collection info is required';
+<<<<<<< HEAD
     if (!description.trim()) newErrors.description = 'A description is required';
     if (!imageFile) newErrors.image = 'Please upload an image';
     if (imageFile && !imageFile.type.startsWith('image/')) newErrors.image = 'Please upload a valid image file';
     if (imageFile && imageFile.size > 5 * 1024 * 1024) newErrors.image = 'Image must be smaller than 5 MB';
+=======
+>>>>>>> origin/main
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -59,6 +74,7 @@ export function ReportFoundPage() {
     e.preventDefault();
     if (!validate()) return;
 
+<<<<<<< HEAD
     if (!user || !imageFile) return;
     setLoading(true);
     try {
@@ -86,6 +102,15 @@ export function ReportFoundPage() {
     } finally {
       setLoading(false);
     }
+=======
+    setLoading(true);
+    // Mock Supabase Submission
+    setTimeout(() => {
+      setLoading(false);
+      addToast('Found item report submitted successfully! Waiting for admin approval.', 'success');
+      navigate('/my-reports');
+    }, 1500);
+>>>>>>> origin/main
   };
 
   return (
@@ -162,22 +187,35 @@ export function ReportFoundPage() {
             </div>
 
             <Textarea
+<<<<<<< HEAD
               label="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               error={errors.description}
+=======
+              label="Description (Optional)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+>>>>>>> origin/main
               placeholder="Describe any distinguishing marks, brands, or color details. Avoid listing ALL contents/passcodes to verify owners."
               rows={4}
             />
 
             <div className="report-found-page__upload">
+<<<<<<< HEAD
               <span className="report-found-page__upload-label">Upload Image</span>
+=======
+              <span className="report-found-page__upload-label">Upload Image (Optional)</span>
+>>>>>>> origin/main
               <label className="report-found-page__upload-area">
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
+<<<<<<< HEAD
                   aria-invalid={errors.image ? 'true' : undefined}
+=======
+>>>>>>> origin/main
                   className="report-found-page__file-input"
                 />
                 {imagePreview ? (
@@ -193,7 +231,10 @@ export function ReportFoundPage() {
                   </div>
                 )}
               </label>
+<<<<<<< HEAD
               {errors.image && <span className="input-group__error" role="alert">{errors.image}</span>}
+=======
+>>>>>>> origin/main
             </div>
 
             <Button

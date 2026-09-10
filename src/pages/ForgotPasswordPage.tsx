@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from 'react';
+<<<<<<< HEAD
 import { supabase } from '../lib/supabase';
+=======
+>>>>>>> origin/main
 import { useToast } from '../components/ui/Toast';
 import './ForgotPasswordPage.css';
 
@@ -45,6 +48,7 @@ export function ForgotPasswordPage() {
     if (!validate()) return;
 
     setLoading(true);
+<<<<<<< HEAD
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/login`,
@@ -56,6 +60,15 @@ export function ForgotPasswordPage() {
       console.error(err);
       const message = err instanceof Error ? err.message : 'Failed to send reset link. Please try again.';
       addToast(message, 'error');
+=======
+    // Simulate a reset email send (wire up to Supabase resetPasswordForEmail here)
+    try {
+      await new Promise((res) => setTimeout(res, 1500));
+      setSent(true);
+      addToast(`Password reset link sent to ${email}!`, 'success');
+    } catch {
+      addToast('Failed to send reset link. Please try again.', 'error');
+>>>>>>> origin/main
     } finally {
       setLoading(false);
     }

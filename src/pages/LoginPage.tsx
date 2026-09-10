@@ -2,7 +2,10 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { signIn } from '../lib/auth';
+<<<<<<< HEAD
 import { supabase } from '../lib/supabase';
+=======
+>>>>>>> origin/main
 import { useToast } from '../components/ui/Toast';
 import './LoginPage.css';
 
@@ -47,6 +50,7 @@ export function LoginPage() {
 
     setLoading(true);
     try {
+<<<<<<< HEAD
       const { data, error } = await signIn(email, password);
       if (error) throw error;
       const { data: profile } = await supabase
@@ -57,6 +61,12 @@ export function LoginPage() {
       addToast('Welcome back to Findly!', 'success');
       const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
       navigate(isAdmin ? '/admin' : '/home');
+=======
+      const { error } = await signIn(email, password);
+      if (error) throw error;
+      addToast('Welcome back to Findly!', 'success');
+      navigate('/');
+>>>>>>> origin/main
     } catch (err: unknown) {
       console.error(err);
       const message = err instanceof Error ? err.message : 'Failed to sign in. Please check your credentials.';

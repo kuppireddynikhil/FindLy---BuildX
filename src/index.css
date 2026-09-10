@@ -10,6 +10,7 @@
 /* CSS Custom Properties */
 :root {
   /* Backgrounds */
+<<<<<<< HEAD
   --bg-primary: #F8FAFC;
   --bg-secondary: #FFFFFF;
   --bg-card: #FFFFFF;
@@ -62,6 +63,60 @@
   --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.08);
   --shadow-glow: 0 0 24px rgba(56, 189, 248, 0.15);
   --shadow-glow-strong: 0 0 40px rgba(56, 189, 248, 0.25);
+=======
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a2e;
+  --bg-glass: rgba(26, 26, 46, 0.7);
+  --bg-glass-light: rgba(26, 26, 46, 0.4);
+  --bg-input: rgba(26, 26, 46, 0.5);
+  --bg-hover: rgba(108, 92, 231, 0.08);
+
+  /* Accents */
+  --accent-primary: #6c5ce7;
+  --accent-primary-hover: #7c6ff7;
+  --accent-primary-light: rgba(108, 92, 231, 0.15);
+  --accent-secondary: #00cec9;
+  --accent-secondary-light: rgba(0, 206, 201, 0.15);
+  --accent-warning: #fdcb6e;
+  --accent-warning-light: rgba(253, 203, 110, 0.15);
+  --accent-danger: #ff6b6b;
+  --accent-danger-light: rgba(255, 107, 107, 0.15);
+  --accent-success: #00b894;
+  --accent-success-light: rgba(0, 184, 148, 0.15);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #6c5ce7 0%, #a855f7 50%, #00cec9 100%);
+  --gradient-hero: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+  --gradient-card: linear-gradient(145deg, rgba(26, 26, 46, 0.8) 0%, rgba(18, 18, 26, 0.9) 100%);
+  --gradient-lost: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  --gradient-found: linear-gradient(135deg, #00b894, #00cec9);
+
+  /* Text */
+  --text-primary: #e8e8ff;
+  --text-secondary: #9d9dba;
+  --text-muted: #5a5a7a;
+  --text-inverse: #0a0a0f;
+
+  /* Borders */
+  --border-subtle: rgba(108, 92, 231, 0.12);
+  --border-medium: rgba(108, 92, 231, 0.25);
+  --border-focus: rgba(108, 92, 231, 0.5);
+
+  /* Spacing */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 30px rgba(108, 92, 231, 0.15);
+  --shadow-glow-strong: 0 0 60px rgba(108, 92, 231, 0.25);
+>>>>>>> origin/main
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -70,8 +125,13 @@
   --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Layout */
+<<<<<<< HEAD
   --navbar-height: 80px;
   --max-width: 1440px;
+=======
+  --navbar-height: 72px;
+  --max-width: 1280px;
+>>>>>>> origin/main
   --max-width-narrow: 640px;
 
   /* Font */

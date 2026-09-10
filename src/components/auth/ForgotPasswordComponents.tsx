@@ -92,7 +92,11 @@ export function HeroIllustration() {
         {[0, 1, 2].map(row => (
           <div key={row} className="flex gap-1.5">
             {[0, 1, 2].map(col => (
+<<<<<<< HEAD
               <div key={col} className="w-1 h-1 rounded-full bg-findlyBlue" />
+=======
+              <div key={col} className="w-1 h-1 rounded-full bg-blue-400" />
+>>>>>>> origin/main
             ))}
           </div>
         ))}
@@ -129,7 +133,11 @@ export function EmailInput({ error, className = '', ...props }: EmailInputProps)
           type="email"
           className={`w-full h-14 pl-11 pr-4 rounded-2xl border ${
             error ? 'border-red-400 bg-red-50/5' : 'border-slate-200 bg-white'
+<<<<<<< HEAD
           } text-slate-900 placeholder-slate-400 text-sm font-medium transition-all duration-200 focus:outline-none focus:border-findlyBlue focus:ring-4 focus:ring-findlyBlue/10`}
+=======
+          } text-slate-900 placeholder-slate-400 text-sm font-medium transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10`}
+>>>>>>> origin/main
           {...props}
         />
       </div>
@@ -151,7 +159,11 @@ export function GradientButton({ children, loading, className = '', ...props }: 
     <button
       type={props.type || 'button'}
       disabled={loading || props.disabled}
+<<<<<<< HEAD
       className={`w-full h-14 flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-findlyBlue to-findlyCyan text-white font-semibold text-base transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/30 hover:-translate-y-[2px] hover:from-sky-400 hover:to-cyan-500 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ${className}`}
+=======
+      className={`w-full h-14 flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-sky-400 text-white font-semibold text-base transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-[2px] hover:from-blue-500 hover:to-sky-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ${className}`}
+>>>>>>> origin/main
       {...props}
     >
       {loading ? (
@@ -188,7 +200,11 @@ interface SecondaryButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElem
 }
 
 export function SecondaryButton({ children, to, className = '', ...props }: SecondaryButtonProps) {
+<<<<<<< HEAD
   const classes = `w-full h-14 flex items-center justify-center gap-2.5 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-sm transition-all duration-200 hover:bg-findlyBlue hover:text-white hover:border-findlyBlue hover:shadow-md active:scale-[0.99] ${className}`;
+=======
+  const classes = `w-full h-14 flex items-center justify-center gap-2.5 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-sm transition-all duration-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:shadow-md active:scale-[0.99] ${className}`;
+>>>>>>> origin/main
 
   if (to) {
     return (
@@ -214,7 +230,11 @@ export function FooterText() {
   return (
     <p className="text-center text-sm font-semibold text-slate-500 mt-2">
       Remember your password?{' '}
+<<<<<<< HEAD
       <Link to="/login" className="text-findlyCyan font-bold hover:text-cyan-700 hover:underline transition-colors">
+=======
+      <Link to="/login" className="text-blue-600 font-bold hover:text-blue-700 hover:underline transition-colors">
+>>>>>>> origin/main
         Sign In
       </Link>
     </p>
