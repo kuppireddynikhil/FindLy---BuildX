@@ -68,7 +68,11 @@ export function InputField({ label, icon, error, type = 'text', className = '', 
           type={inputType}
           className={`w-full h-14 ${icon ? 'pl-11' : 'px-4'} ${isPassword ? 'pr-12' : 'pr-4'} rounded-2xl border ${
             error ? 'border-red-500 bg-red-50/5' : 'border-slate-200 bg-white'
+<<<<<<< HEAD
+          } text-slate-900 placeholder-slate-400 text-sm font-medium transition-all duration-200 focus:outline-none focus:border-findlyBlue focus:ring-4 focus:ring-findlyBlue/10`}
+=======
           } text-slate-900 placeholder-slate-400 text-sm font-medium transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10`}
+>>>>>>> origin/main
           {...props}
         />
         {isPassword && (
@@ -144,7 +148,11 @@ export function CheckboxField({ label, error, className = '', ...props }: Checkb
       <label className="flex items-start gap-2.5 cursor-pointer text-left select-none">
         <input
           type="checkbox"
+<<<<<<< HEAD
+          className="w-[18px] h-[18px] mt-0.5 rounded-md border-slate-200 text-findlyCyan accent-findlyCyan focus:ring-findlyBlue/20 cursor-pointer"
+=======
           className="w-[18px] h-[18px] mt-0.5 rounded-md border-slate-200 text-blue-600 accent-blue-600 focus:ring-blue-500/20 cursor-pointer"
+>>>>>>> origin/main
           {...props}
         />
         <span className="text-sm font-semibold text-slate-600 leading-normal">{label}</span>
@@ -216,7 +224,11 @@ export function GradientButton({ children, loading, icon, className = '', ...pro
     <button
       type={props.type || 'button'}
       disabled={loading || props.disabled}
+<<<<<<< HEAD
+      className={`w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-findlyBlue to-findlyCyan text-white font-semibold text-base transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transform hover:-translate-y-[2px] ${className}`}
+=======
       className={`w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-sky-400 text-white font-semibold text-base transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transform hover:-translate-y-[2px] ${className}`}
+>>>>>>> origin/main
       {...props}
     >
       {loading ? (

@@ -1,11 +1,28 @@
+<<<<<<< HEAD
+import { useLocation } from 'react-router-dom';
+import { Footer as LandingFooter } from '../landing/Footer';
+=======
 import { Link, useLocation } from 'react-router-dom';
 import { Heart, Globe, Mail } from 'lucide-react';
 import { Footer as LandingFooter } from '../landing/Footer';
 import './Footer.css';
+>>>>>>> origin/main
 
 export function Footer() {
   const location = useLocation();
 
+<<<<<<< HEAD
+  if (
+    location.pathname === '/login' ||
+    location.pathname === '/signup' ||
+    location.pathname === '/forgot-password' ||
+    location.pathname.startsWith('/admin')
+  ) {
+    return null;
+  }
+
+  return <LandingFooter />;
+=======
   if (location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/forgot-password') {
     return null;
   }
@@ -58,4 +75,5 @@ export function Footer() {
       </div>
     </footer>
   );
+>>>>>>> origin/main
 }

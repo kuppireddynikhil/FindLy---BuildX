@@ -3,7 +3,12 @@ import { supabase } from "./supabase";
 export const signUp = async (
   email: string,
   password: string,
+<<<<<<< HEAD
+  fullName: string,
+  phone?: string
+=======
   fullName: string
+>>>>>>> origin/main
 ) => {
   return await supabase.auth.signUp({
     email,
@@ -11,6 +16,10 @@ export const signUp = async (
     options: {
       data: {
         full_name: fullName,
+<<<<<<< HEAD
+        phone,
+=======
+>>>>>>> origin/main
       },
     },
   });

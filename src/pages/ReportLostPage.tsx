@@ -5,10 +5,19 @@ import { Input, Select, Textarea } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
 import { ITEM_CATEGORIES, CAMPUS_LOCATIONS } from '../types/database';
+<<<<<<< HEAD
+import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
+=======
+>>>>>>> origin/main
 import './ReportLostPage.css';
 
 export function ReportLostPage() {
   const { addToast } = useToast();
+<<<<<<< HEAD
+  const { user } = useAuth();
+=======
+>>>>>>> origin/main
   const navigate = useNavigate();
 
   const [title, setTitle] = useState('');
@@ -18,6 +27,10 @@ export function ReportLostPage() {
   const [date, setDate] = useState('');
   const [contactInfo, setContactInfo] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+<<<<<<< HEAD
+  const [imageFile, setImageFile] = useState<File | null>(null);
+=======
+>>>>>>> origin/main
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -27,6 +40,10 @@ export function ReportLostPage() {
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+<<<<<<< HEAD
+      setImageFile(file);
+=======
+>>>>>>> origin/main
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -42,6 +59,13 @@ export function ReportLostPage() {
     if (!location) newErrors.location = 'Last seen location is required';
     if (!date) newErrors.date = 'Date lost is required';
     if (!contactInfo.trim()) newErrors.contactInfo = 'Contact info is required';
+<<<<<<< HEAD
+    if (!description.trim()) newErrors.description = 'A description is required';
+    if (!imageFile) newErrors.image = 'Please upload an image';
+    if (imageFile && !imageFile.type.startsWith('image/')) newErrors.image = 'Please upload a valid image file';
+    if (imageFile && imageFile.size > 5 * 1024 * 1024) newErrors.image = 'Image must be smaller than 5 MB';
+=======
+>>>>>>> origin/main
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -50,6 +74,35 @@ export function ReportLostPage() {
     e.preventDefault();
     if (!validate()) return;
 
+<<<<<<< HEAD
+    if (!user || !imageFile) return;
+    setLoading(true);
+    try {
+      const filePath = `${user.id}/${crypto.randomUUID()}-${imageFile.name}`;
+      const upload = await supabase.storage.from('item-images').upload(filePath, imageFile, { upsert: false });
+      if (upload.error) throw upload.error;
+      const image = supabase.storage.from('item-images').getPublicUrl(filePath);
+      const { error } = await supabase.from('items').insert({
+        user_id: user.id,
+        type: 'lost',
+        title: title.trim(),
+        description: description.trim(),
+        category,
+        location,
+        date,
+        image_url: image.data.publicUrl,
+        contact_info: contactInfo.trim(),
+      });
+      if (error) throw error;
+      addToast('Lost item report submitted successfully!', 'success');
+      navigate('/my-reports');
+    } catch (err) {
+      console.error(err);
+      addToast('Could not submit the report. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+    }
+=======
     setLoading(true);
     // Mock Supabase Submission
     setTimeout(() => {
@@ -57,6 +110,7 @@ export function ReportLostPage() {
       addToast('Lost item report submitted successfully! Waiting for admin approval.', 'success');
       navigate('/my-reports');
     }, 1500);
+>>>>>>> origin/main
   };
 
   return (
@@ -133,20 +187,35 @@ export function ReportLostPage() {
             </div>
 
             <Textarea
+<<<<<<< HEAD
+              label="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              error={errors.description}
+=======
               label="Description (Optional)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+>>>>>>> origin/main
               placeholder="Describe any distinguishing marks, brands, sticker designs, case color, or contents..."
               rows={4}
             />
 
             <div className="report-lost-page__upload">
+<<<<<<< HEAD
+              <span className="report-lost-page__upload-label">Upload Image</span>
+=======
               <span className="report-lost-page__upload-label">Upload Image (Optional)</span>
+>>>>>>> origin/main
               <label className="report-lost-page__upload-area">
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
+<<<<<<< HEAD
+                  aria-invalid={errors.image ? 'true' : undefined}
+=======
+>>>>>>> origin/main
                   className="report-lost-page__file-input"
                 />
                 {imagePreview ? (
@@ -162,6 +231,10 @@ export function ReportLostPage() {
                   </div>
                 )}
               </label>
+<<<<<<< HEAD
+              {errors.image && <span className="input-group__error" role="alert">{errors.image}</span>}
+=======
+>>>>>>> origin/main
             </div>
 
             <Button
