@@ -4,6 +4,7 @@
 
 -- Enable UUID generation
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================
 -- Profiles table (extends Supabase auth.users)
@@ -23,7 +24,7 @@ RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, full_name)
   VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'full_name');
-  RETURN NEW;
+  RETURN NEW; 
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
