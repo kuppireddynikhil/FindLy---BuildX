@@ -136,6 +136,12 @@ export function ReportItemPage() {
       const res = await reportsService.createReport(
         {
           reporter_id: user.id,
+          reporter_email: user.email,
+          reporter: {
+            id: user.id,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'SVCE Student',
+            avatar_url: user.user_metadata?.avatar_url,
+          },
           type: reportType,
           title: title.trim(),
           description: description.trim(),

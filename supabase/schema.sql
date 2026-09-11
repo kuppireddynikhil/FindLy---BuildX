@@ -1,323 +1,409 @@
--- Findly complete Supabase schema
--- Run this file in the Supabase SQL Editor on a new project.
--- Create Auth users through Supabase Auth; public.profiles is created automatically.
+﻿-- ==============================================================================
+-- FindLy ΓÇö Campus Lost & Found Supabase Schema
+-- Complete and fully executable schema for SVCE Tirupati campus ecosystem.
+-- Paste and run this script in the Supabase SQL Editor.
+-- ==============================================================================
 
+-- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE SCHEMA IF NOT EXISTS private;
+-- 2. CUSTOM ENUM TYPES
+DO $$ BEGIN
+  CREATE TYPE public.report_type AS ENUM ('LOST', 'FOUND');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
-CREATE OR REPLACE FUNCTION private.set_updated_at()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = public
-AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$;
+DO $$ BEGIN
+  CREATE TYPE public.report_status AS ENUM (
+    'PENDING_REVIEW',
+    'ACTIVE',
+    'MATCHED',
+    'RECOVERED',
+    'WITHDRAWN',
+    'REJECTED'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
-CREATE TABLE public.profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email TEXT NOT NULL,
-  full_name TEXT,
-  phone TEXT,
-  department TEXT,
-  avatar_url TEXT,
-  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-  account_status TEXT NOT NULL DEFAULT 'active' CHECK (account_status IN ('active', 'disabled')),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+DO $$ BEGIN
+  CREATE TYPE public.match_status AS ENUM ('SUGGESTED', 'CONFIRMED', 'DISMISSED');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE public.conversation_status AS ENUM ('PENDING', 'ACCEPTED', 'CLOSED');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE public.recovery_status AS ENUM ('OPEN', 'IN_PROGRESS', 'COMPLETED', 'DISPUTED');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- 3. CORE CAMPUS GEOGRAPHY & ACADEMIC TABLES
+CREATE TABLE IF NOT EXISTS public.campuses (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  geojson jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT campuses_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE public.locations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  building TEXT NOT NULL,
-  floor TEXT,
-  room TEXT,
-  latitude NUMERIC(9, 6),
-  longitude NUMERIC(9, 6),
-  active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (building, floor, room)
+CREATE TABLE IF NOT EXISTS public.buildings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  campus_id uuid REFERENCES public.campuses(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  code text,
+  latitude numeric,
+  longitude numeric,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT buildings_pkey PRIMARY KEY (id)
 );
 
--- The existing frontend calls this table items. It is the application's reports table.
-CREATE TABLE public.items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  report_code TEXT UNIQUE,
-  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('lost', 'found')),
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  category TEXT NOT NULL,
-  brand TEXT,
-  color TEXT,
-  identifying_features TEXT,
-  location TEXT NOT NULL,
-  building TEXT,
-  floor TEXT,
-  room_area TEXT,
-  date DATE NOT NULL,
-  time TIME,
-  image_url TEXT NOT NULL,
-  contact_method TEXT,
-  contact_info TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('pending', 'open', 'potential_match', 'claimed', 'resolved', 'recovered', 'closed', 'archived', 'flagged')),
-  is_searchable BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+CREATE TABLE IF NOT EXISTS public.floors (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  building_id uuid NOT NULL REFERENCES public.buildings(id) ON DELETE CASCADE,
+  label text NOT NULL,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT floors_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE public.claims (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  item_id UUID NOT NULL REFERENCES public.items(id) ON DELETE CASCADE,
-  claimant_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  message TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled')),
-  reviewed_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-  reviewed_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (item_id, claimant_id)
+CREATE TABLE IF NOT EXISTS public.campus_locations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  campus_id uuid REFERENCES public.campuses(id) ON DELETE CASCADE,
+  building_id uuid REFERENCES public.buildings(id) ON DELETE CASCADE,
+  floor_id uuid REFERENCES public.floors(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  latitude numeric,
+  longitude numeric,
+  is_outdoor boolean NOT NULL DEFAULT false,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT campus_locations_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE public.notifications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  item_id UUID REFERENCES public.items(id) ON DELETE SET NULL,
-  claim_id UUID REFERENCES public.claims(id) ON DELETE SET NULL,
-  title TEXT NOT NULL,
-  message TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('report_submitted', 'potential_match', 'claim_update', 'recovery_confirmation', 'admin_announcement', 'system')),
-  is_read BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+CREATE TABLE IF NOT EXISTS public.departments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT departments_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE public.recovery_records (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  item_id UUID NOT NULL UNIQUE REFERENCES public.items(id) ON DELETE CASCADE,
-  recovered_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-  confirmed_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-  notes TEXT,
-  recovered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  confirmed_at TIMESTAMPTZ
+CREATE TABLE IF NOT EXISTS public.roles (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE,
+  description text,
+  CONSTRAINT roles_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE public.system_settings (
-  key TEXT PRIMARY KEY,
-  value JSONB NOT NULL DEFAULT '{}'::jsonb,
-  description TEXT,
-  updated_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+CREATE TABLE IF NOT EXISTS public.categories (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE,
+  icon text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT categories_pkey PRIMARY KEY (id)
 );
 
--- Seed locations used by the current report and search forms.
-INSERT INTO public.locations (name, building) VALUES
-  ('Library', 'Library'),
-  ('Cafeteria', 'Cafeteria'),
-  ('Main Building', 'Main Building'),
-  ('Science Block', 'Science Block'),
-  ('Engineering Block', 'Engineering Block'),
-  ('Arts Building', 'Arts Building'),
-  ('Sports Complex', 'Sports Complex'),
-  ('Auditorium', 'Auditorium'),
-  ('Parking Lot', 'Parking Lot'),
-  ('Hostel', 'Hostel'),
-  ('Lab', 'Lab'),
-  ('Playground', 'Playground'),
-  ('Bus Stop', 'Bus Stop'),
-  ('Other', 'Other')
-ON CONFLICT (building, floor, room) DO NOTHING;
+-- 4. USER PROFILES (Linked to Supabase auth.users)
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid NOT NULL,
+  full_name text NOT NULL,
+  email text NOT NULL,
+  avatar_url text,
+  department_id uuid REFERENCES public.departments(id) ON DELETE SET NULL,
+  phone text,
+  role text NOT NULL DEFAULT 'user',
+  is_active boolean NOT NULL DEFAULT true,
+  account_status text NOT NULL DEFAULT 'active',
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
+);
 
-INSERT INTO public.system_settings (key, value, description) VALUES
-  ('reporting_enabled', 'true', 'Allow users to submit lost and found reports.'),
-  ('claims_enabled', 'true', 'Allow authenticated users to submit item claims.'),
-  ('announcement', 'null', 'Current announcement shown to users.')
-ON CONFLICT (key) DO NOTHING;
+CREATE TABLE IF NOT EXISTS public.user_roles (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  profile_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  role_id uuid NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
+  assigned_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  assigned_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_roles_pkey PRIMARY KEY (id)
+);
 
--- New Auth users always receive the user role. Admin access must be assigned separately.
+-- 5. ITEMS & REPORTS
+CREATE TABLE IF NOT EXISTS public.items (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  category_id uuid REFERENCES public.categories(id) ON DELETE SET NULL,
+  title text NOT NULL,
+  description text,
+  identifying_features text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT items_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.reports (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  item_id uuid REFERENCES public.items(id) ON DELETE CASCADE,
+  reporter_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  type public.report_type NOT NULL,
+  status public.report_status NOT NULL DEFAULT 'ACTIVE'::public.report_status,
+  campus_location_id uuid REFERENCES public.campus_locations(id) ON DELETE SET NULL,
+  latitude numeric,
+  longitude numeric,
+  occurred_at timestamp with time zone NOT NULL DEFAULT now(),
+  reported_at timestamp with time zone NOT NULL DEFAULT now(),
+  reviewed_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT reports_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.report_images (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  report_id uuid NOT NULL REFERENCES public.reports(id) ON DELETE CASCADE,
+  storage_path text NOT NULL,
+  sort_order integer NOT NULL DEFAULT 0,
+  uploaded_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT report_images_pkey PRIMARY KEY (id)
+);
+
+-- 6. MATCHING, MESSAGING & RECOVERY
+CREATE TABLE IF NOT EXISTS public.matches (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  lost_report_id uuid NOT NULL REFERENCES public.reports(id) ON DELETE CASCADE,
+  found_report_id uuid NOT NULL REFERENCES public.reports(id) ON DELETE CASCADE,
+  score numeric NOT NULL CHECK (score >= 0 AND score <= 100),
+  status public.match_status NOT NULL DEFAULT 'SUGGESTED'::public.match_status,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT matches_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.conversations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  report_id uuid NOT NULL REFERENCES public.reports(id) ON DELETE CASCADE,
+  requester_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  reporter_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  status public.conversation_status NOT NULL DEFAULT 'PENDING'::public.conversation_status,
+  preliminary_message_count integer NOT NULL DEFAULT 0 CHECK (preliminary_message_count >= 0),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT conversations_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.conversation_participants (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+  profile_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  role_in_conversation text NOT NULL CHECK (role_in_conversation IN ('requester', 'reporter')),
+  last_read_at timestamp with time zone,
+  CONSTRAINT conversation_participants_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.messages (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+  sender_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  body text,
+  attachment_path text,
+  is_preliminary boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT messages_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.recovery_cases (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  match_id uuid NOT NULL UNIQUE REFERENCES public.matches(id) ON DELETE CASCADE,
+  status public.recovery_status NOT NULL DEFAULT 'OPEN'::public.recovery_status,
+  verified_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  verified_at timestamp with time zone,
+  handover_at timestamp with time zone,
+  notes text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT recovery_cases_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  profile_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  type text NOT NULL,
+  payload jsonb,
+  is_read boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT notifications_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  actor_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  action text NOT NULL,
+  entity text NOT NULL,
+  entity_id uuid,
+  metadata jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT audit_logs_pkey PRIMARY KEY (id)
+);
+
+-- 7. AUTO-PROFILE CREATION ON AUTH SIGNUP TRIGGER
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
+RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name, phone, role)
+  INSERT INTO public.profiles (id, full_name, email, avatar_url, phone, role)
   VALUES (
     NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
     COALESCE(NEW.email, ''),
-    NULLIF(NEW.raw_user_meta_data ->> 'full_name', ''),
-    NULLIF(NEW.raw_user_meta_data ->> 'phone', ''),
+    NEW.raw_user_meta_data->>'avatar_url',
+    NEW.raw_user_meta_data->>'phone',
     'user'
   )
   ON CONFLICT (id) DO UPDATE SET
-    email = EXCLUDED.email,
-    full_name = COALESCE(EXCLUDED.full_name, profiles.full_name),
-    phone = COALESCE(EXCLUDED.phone, profiles.phone);
+    full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
+    email = COALESCE(EXCLUDED.email, public.profiles.email);
   RETURN NEW;
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
-CREATE OR REPLACE FUNCTION private.is_admin()
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = (SELECT auth.uid())
-      AND role = 'admin'
-      AND account_status = 'active'
-  );
-$$;
+-- Also backfill any existing auth users into profiles table
+INSERT INTO public.profiles (id, full_name, email, role)
+SELECT
+  id,
+  COALESCE(raw_user_meta_data->>'full_name', split_part(email, '@', 1)),
+  COALESCE(email, ''),
+  'user'
+FROM auth.users
+ON CONFLICT (id) DO NOTHING;
 
-REVOKE ALL ON FUNCTION private.is_admin() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION private.is_admin() TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.assign_report_code()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = public
-AS $$
-BEGIN
-  IF NEW.report_code IS NULL THEN
-    NEW.report_code := CASE WHEN NEW.type = 'lost' THEN 'L-' ELSE 'F-' END || lpad((floor(random() * 90000) + 10000)::text, 5, '0');
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.validate_item_complete()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = public
-AS $$
-BEGIN
-  IF NULLIF(btrim(NEW.title), '') IS NULL THEN RAISE EXCEPTION 'Item title is required'; END IF;
-  IF NULLIF(btrim(NEW.description), '') IS NULL THEN RAISE EXCEPTION 'Item description is required'; END IF;
-  IF NULLIF(btrim(NEW.category), '') IS NULL THEN RAISE EXCEPTION 'Item category is required'; END IF;
-  IF NULLIF(btrim(NEW.location), '') IS NULL THEN RAISE EXCEPTION 'Item location is required'; END IF;
-  IF NEW.date IS NULL THEN RAISE EXCEPTION 'Item date is required'; END IF;
-  IF NULLIF(btrim(NEW.image_url), '') IS NULL THEN RAISE EXCEPTION 'Item image is required'; END IF;
-  IF NULLIF(btrim(NEW.contact_info), '') IS NULL THEN RAISE EXCEPTION 'Contact information is required'; END IF;
-  RETURN NEW;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.notify_report_created()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  INSERT INTO public.notifications (user_id, item_id, title, message, type)
-  VALUES (NEW.user_id, NEW.id, 'Report submitted', 'Your ' || NEW.type || ' report was submitted successfully.', 'report_submitted');
-  RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS profiles_updated_at ON public.profiles;
-CREATE TRIGGER profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
-DROP TRIGGER IF EXISTS locations_updated_at ON public.locations;
-CREATE TRIGGER locations_updated_at BEFORE UPDATE ON public.locations FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
-DROP TRIGGER IF EXISTS items_updated_at ON public.items;
-CREATE TRIGGER items_updated_at BEFORE UPDATE ON public.items FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
-DROP TRIGGER IF EXISTS claims_updated_at ON public.claims;
-CREATE TRIGGER claims_updated_at BEFORE UPDATE ON public.claims FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
-DROP TRIGGER IF EXISTS items_assign_report_code ON public.items;
-CREATE TRIGGER items_assign_report_code BEFORE INSERT ON public.items FOR EACH ROW EXECUTE FUNCTION public.assign_report_code();
-DROP TRIGGER IF EXISTS items_validate_complete ON public.items;
-CREATE TRIGGER items_validate_complete BEFORE INSERT OR UPDATE ON public.items FOR EACH ROW EXECUTE FUNCTION public.validate_item_complete();
-DROP TRIGGER IF EXISTS items_notify_created ON public.items;
-CREATE TRIGGER items_notify_created AFTER INSERT ON public.items FOR EACH ROW EXECUTE FUNCTION public.notify_report_created();
-
+-- 8. ROW LEVEL SECURITY (RLS) POLICIES
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campuses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.buildings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.floors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campus_locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.claims ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.report_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversation_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.recovery_cases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.recovery_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Profiles: users can read/update their own profile; admins can manage all profiles.
-CREATE POLICY "profiles_select_own_or_admin" ON public.profiles FOR SELECT TO authenticated USING (id = (SELECT auth.uid()) OR (SELECT private.is_admin()));
-CREATE POLICY "profiles_update_own" ON public.profiles FOR UPDATE TO authenticated USING (id = (SELECT auth.uid())) WITH CHECK (id = (SELECT auth.uid()) AND role = 'user');
-CREATE POLICY "profiles_admin_update" ON public.profiles FOR UPDATE TO authenticated USING ((SELECT private.is_admin())) WITH CHECK (true);
+-- Profiles Policies
+DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON public.profiles;
+CREATE POLICY "Profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
 
--- Locations are readable by signed-in users; only admins can modify them.
-CREATE POLICY "locations_authenticated_read" ON public.locations FOR SELECT TO authenticated USING (active = true OR (SELECT private.is_admin()));
-CREATE POLICY "locations_admin_insert" ON public.locations FOR INSERT TO authenticated WITH CHECK ((SELECT private.is_admin()));
-CREATE POLICY "locations_admin_update" ON public.locations FOR UPDATE TO authenticated USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
-CREATE POLICY "locations_admin_delete" ON public.locations FOR DELETE TO authenticated USING ((SELECT private.is_admin()));
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Reports are searchable by authenticated users. Mutations are owner/admin controlled.
-CREATE POLICY "items_authenticated_read" ON public.items FOR SELECT TO authenticated USING (is_searchable = true OR user_id = (SELECT auth.uid()) OR (SELECT private.is_admin()));
-CREATE POLICY "items_owner_insert" ON public.items FOR INSERT TO authenticated WITH CHECK (user_id = (SELECT auth.uid()));
-CREATE POLICY "items_owner_update" ON public.items FOR UPDATE TO authenticated USING (user_id = (SELECT auth.uid())) WITH CHECK (user_id = (SELECT auth.uid()));
-CREATE POLICY "items_admin_update" ON public.items FOR UPDATE TO authenticated USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
-CREATE POLICY "items_owner_delete" ON public.items FOR DELETE TO authenticated USING (user_id = (SELECT auth.uid()));
-CREATE POLICY "items_admin_delete" ON public.items FOR DELETE TO authenticated USING ((SELECT private.is_admin()));
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- Claims: claimants see their own claims; item owners/admins review claims.
-CREATE POLICY "claims_read_claimant_or_reviewer" ON public.claims FOR SELECT TO authenticated USING (claimant_id = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.items WHERE id = item_id AND user_id = (SELECT auth.uid())) OR (SELECT private.is_admin()));
-CREATE POLICY "claims_create_own" ON public.claims FOR INSERT TO authenticated WITH CHECK (claimant_id = (SELECT auth.uid()));
-CREATE POLICY "claims_update_reviewer" ON public.claims FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM public.items WHERE id = item_id AND user_id = (SELECT auth.uid())) OR (SELECT private.is_admin())) WITH CHECK (EXISTS (SELECT 1 FROM public.items WHERE id = item_id AND user_id = (SELECT auth.uid())) OR (SELECT private.is_admin()));
+-- Categories Policies
+DROP POLICY IF EXISTS "Categories are viewable by everyone" ON public.categories;
+CREATE POLICY "Categories are viewable by everyone" ON public.categories FOR SELECT USING (true);
 
--- Notifications belong only to their recipient, except admin announcement creation.
-CREATE POLICY "notifications_read_own" ON public.notifications FOR SELECT TO authenticated USING (user_id = (SELECT auth.uid()) OR (SELECT private.is_admin()));
-CREATE POLICY "notifications_update_own" ON public.notifications FOR UPDATE TO authenticated USING (user_id = (SELECT auth.uid())) WITH CHECK (user_id = (SELECT auth.uid()));
-CREATE POLICY "notifications_admin_insert" ON public.notifications FOR INSERT TO authenticated WITH CHECK ((SELECT private.is_admin()));
+DROP POLICY IF EXISTS "Authenticated users can insert categories" ON public.categories;
+CREATE POLICY "Authenticated users can insert categories" ON public.categories FOR INSERT TO authenticated WITH CHECK (true);
 
--- Recovery records are visible to the item owner, recovered user, or admins.
-CREATE POLICY "recovery_read_related" ON public.recovery_records FOR SELECT TO authenticated USING (recovered_by = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.items WHERE id = item_id AND user_id = (SELECT auth.uid())) OR (SELECT private.is_admin()));
-CREATE POLICY "recovery_create_related" ON public.recovery_records FOR INSERT TO authenticated WITH CHECK (recovered_by = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.items WHERE id = item_id AND user_id = (SELECT auth.uid())) OR (SELECT private.is_admin()));
-CREATE POLICY "recovery_update_related" ON public.recovery_records FOR UPDATE TO authenticated USING (recovered_by = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.items WHERE id = item_id AND user_id = (SELECT auth.uid())) OR (SELECT private.is_admin())) WITH CHECK (recovered_by = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.items WHERE id = item_id AND user_id = (SELECT auth.uid())) OR (SELECT private.is_admin()));
+-- Campus & Locations Policies
+DROP POLICY IF EXISTS "Locations viewable by everyone" ON public.campus_locations;
+CREATE POLICY "Locations viewable by everyone" ON public.campus_locations FOR SELECT USING (true);
 
-CREATE POLICY "settings_admin_read" ON public.system_settings FOR SELECT TO authenticated USING ((SELECT private.is_admin()));
-CREATE POLICY "settings_admin_update" ON public.system_settings FOR UPDATE TO authenticated USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
-CREATE POLICY "settings_admin_insert" ON public.system_settings FOR INSERT TO authenticated WITH CHECK ((SELECT private.is_admin()));
+DROP POLICY IF EXISTS "Buildings viewable by everyone" ON public.buildings;
+CREATE POLICY "Buildings viewable by everyone" ON public.buildings FOR SELECT USING (true);
 
--- Report images are private to the bucket but publicly readable through the app's item URLs.
+-- Items Policies
+DROP POLICY IF EXISTS "Items are viewable by everyone" ON public.items;
+CREATE POLICY "Items are viewable by everyone" ON public.items FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert items" ON public.items;
+CREATE POLICY "Authenticated users can insert items" ON public.items FOR INSERT TO authenticated WITH CHECK (true);
+
+-- Reports Policies
+DROP POLICY IF EXISTS "Reports are viewable by everyone" ON public.reports;
+CREATE POLICY "Reports are viewable by everyone" ON public.reports FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert reports" ON public.reports;
+CREATE POLICY "Authenticated users can insert reports" ON public.reports FOR INSERT TO authenticated WITH CHECK (auth.uid() = reporter_id);
+
+DROP POLICY IF EXISTS "Users can update own reports" ON public.reports;
+CREATE POLICY "Users can update own reports" ON public.reports FOR UPDATE TO authenticated USING (auth.uid() = reporter_id);
+
+-- Report Images Policies
+DROP POLICY IF EXISTS "Report images viewable by everyone" ON public.report_images;
+CREATE POLICY "Report images viewable by everyone" ON public.report_images FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert report images" ON public.report_images;
+CREATE POLICY "Authenticated users can insert report images" ON public.report_images FOR INSERT TO authenticated WITH CHECK (true);
+
+-- Matches Policies
+DROP POLICY IF EXISTS "Matches viewable by everyone" ON public.matches;
+CREATE POLICY "Matches viewable by everyone" ON public.matches FOR SELECT USING (true);
+
+-- Messages & Conversations Policies
+DROP POLICY IF EXISTS "Participants can view conversations" ON public.conversations;
+CREATE POLICY "Participants can view conversations" ON public.conversations FOR SELECT TO authenticated
+  USING (auth.uid() = requester_id OR auth.uid() = reporter_id);
+
+DROP POLICY IF EXISTS "Users can create conversations" ON public.conversations;
+CREATE POLICY "Users can create conversations" ON public.conversations FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = requester_id);
+
+DROP POLICY IF EXISTS "Participants can view messages" ON public.messages;
+CREATE POLICY "Participants can view messages" ON public.messages FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Participants can insert messages" ON public.messages;
+CREATE POLICY "Participants can insert messages" ON public.messages FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = sender_id);
+
+-- Notifications Policies
+DROP POLICY IF EXISTS "Users view own notifications" ON public.notifications;
+CREATE POLICY "Users view own notifications" ON public.notifications FOR SELECT TO authenticated
+  USING (auth.uid() = profile_id);
+
+-- 9. INITIAL SEED CATEGORIES
+INSERT INTO public.categories (name, icon) VALUES
+  ('Electronics & Gadgets', 'smartphone'),
+  ('ID Cards & Documents', 'credit-card'),
+  ('Bags & Backpacks', 'briefcase'),
+  ('Keys & Access Cards', 'key'),
+  ('Books & Stationery', 'book-open'),
+  ('Clothing & Accessories', 'shirt'),
+  ('Personal Belongings', 'package')
+ON CONFLICT (name) DO NOTHING;
+
+-- 10. STORAGE BUCKET CREATION FOR REPORT IMAGES
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('item-images', 'item-images', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp']::text[])
-ON CONFLICT (id) DO UPDATE SET public = true, file_size_limit = 5242880, allowed_mime_types = EXCLUDED.allowed_mime_types;
+VALUES (
+  'report-images',
+  'report-images',
+  true,
+  5242880,
+  ARRAY['image/jpeg', 'image/png', 'image/webp']::text[]
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 5242880,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
 
-CREATE POLICY "item_images_insert_own_folder" ON storage.objects FOR INSERT TO authenticated
-WITH CHECK (bucket_id = 'item-images' AND (storage.foldername(name))[1] = (SELECT auth.uid())::text);
-CREATE POLICY "item_images_update_own_folder" ON storage.objects FOR UPDATE TO authenticated
-USING (bucket_id = 'item-images' AND (storage.foldername(name))[1] = (SELECT auth.uid())::text)
-WITH CHECK (bucket_id = 'item-images' AND (storage.foldername(name))[1] = (SELECT auth.uid())::text);
-CREATE POLICY "item_images_delete_own_folder" ON storage.objects FOR DELETE TO authenticated
-USING (bucket_id = 'item-images' AND (storage.foldername(name))[1] = (SELECT auth.uid())::text);
-CREATE POLICY "item_images_read_public" ON storage.objects FOR SELECT TO public USING (bucket_id = 'item-images');
+DROP POLICY IF EXISTS "Public can view report images" ON storage.objects;
+CREATE POLICY "Public can view report images" ON storage.objects FOR SELECT TO public
+  USING (bucket_id = 'report-images');
 
-CREATE INDEX idx_profiles_role ON public.profiles(role);
-CREATE INDEX idx_profiles_status ON public.profiles(account_status);
-CREATE INDEX idx_locations_building ON public.locations(building);
-CREATE INDEX idx_items_type ON public.items(type);
-CREATE INDEX idx_items_status ON public.items(status);
-CREATE INDEX idx_items_category ON public.items(category);
-CREATE INDEX idx_items_location ON public.items(location);
-CREATE INDEX idx_items_user_id ON public.items(user_id);
-CREATE INDEX idx_items_created_at ON public.items(created_at DESC);
-CREATE INDEX idx_claims_item_id ON public.claims(item_id);
-CREATE INDEX idx_claims_claimant_id ON public.claims(claimant_id);
-CREATE INDEX idx_claims_status ON public.claims(status);
-CREATE INDEX idx_notifications_user_id_read ON public.notifications(user_id, is_read);
-CREATE INDEX idx_notifications_created_at ON public.notifications(created_at DESC);
-CREATE INDEX idx_recovery_item_id ON public.recovery_records(item_id);
-
-GRANT USAGE ON SCHEMA private TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles, public.locations, public.items, public.claims, public.notifications, public.recovery_records, public.system_settings TO authenticated;
+DROP POLICY IF EXISTS "Authenticated users can upload report images" ON storage.objects;
+CREATE POLICY "Authenticated users can upload report images" ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'report-images');
