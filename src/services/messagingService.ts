@@ -55,21 +55,32 @@ export const messagingService = {
             const otherPartyId = conv.requester_id === userId ? conv.reporter_id : conv.requester_id;
             const { data: profile } = await supabase
               .from('profiles')
-              .select('id, full_name, avatar_url, role')
+              .select('id, full_name, avatar_url')
               .eq('id', otherPartyId)
               .maybeSingle();
 
-            // Fetch report title if attached
+            // Fetch report title through reports -> items
             let reportTitle = 'Campus Lost & Found Inquiry';
+
             if (conv.report_id) {
               const { data: report } = await supabase
                 .from('reports')
-                .select('title')
+                .select('item_id')
                 .eq('id', conv.report_id)
                 .maybeSingle();
-              if (report) reportTitle = report.title;
-            }
 
+              if (report?.item_id) {
+                const { data: item } = await supabase
+                  .from('items')
+                  .select('title')
+                  .eq('id', report.item_id)
+                  .maybeSingle();
+
+                if (item?.title) {
+                  reportTitle = item.title;
+                }
+              }
+            }
             return {
               ...conv,
               report_title: reportTitle,
@@ -199,7 +210,7 @@ export const messagingService = {
                 conversation_id: conversationId,
                 sender_id: senderId,
                 body: content,
-                attachment_url: attachmentUrl,
+                attachment_path: attachmentUrl,
               },
             ]);
 
