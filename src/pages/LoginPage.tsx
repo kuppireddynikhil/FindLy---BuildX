@@ -49,13 +49,35 @@ export function LoginPage() {
     try {
       const { data, error } = await signIn(email, password);
       if (error) throw error;
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user?.id ?? '')
-        .maybeSingle();
+      const userId = data.user?.id;
+
+      let role: string = 'user';
+
+      if (userId) {
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('roles(name)')
+          .eq('profile_id', userId)
+          .limit(1);
+
+        if (roleError) {
+          console.error('Error loading user role:', roleError);
+        }
+
+        // Normalize the raw DB role name to a canonical app-level role
+        const dbRole = (roleData as { roles: { name: string }[] }[] | null)?.[0]?.roles?.[0]?.name?.toLowerCase();
+        role =
+          dbRole === 'super_admin' || dbRole === 'super_administrator'
+            ? 'super_admin'
+            : dbRole === 'administrator' || dbRole === 'admin'
+              ? 'admin'
+              : 'user';
+      }
+
       addToast('Welcome back to Findly!', 'success');
-      const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+
+      const isAdmin = role === 'admin' || role === 'super_admin';
+
       navigate(isAdmin ? '/admin' : '/home');
     } catch (err: unknown) {
       console.error(err);

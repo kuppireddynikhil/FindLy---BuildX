@@ -15,7 +15,7 @@ export interface Conversation {
   requester_id: string;
   reporter_id: string;
   status: ConversationStatus;
-  requester_message_count: number;
+  preliminary_message_count: number;
   created_at: string;
   updated_at: string;
   report_title?: string;
@@ -55,21 +55,32 @@ export const messagingService = {
             const otherPartyId = conv.requester_id === userId ? conv.reporter_id : conv.requester_id;
             const { data: profile } = await supabase
               .from('profiles')
-              .select('id, full_name, avatar_url, role')
+              .select('id, full_name, avatar_url')
               .eq('id', otherPartyId)
               .maybeSingle();
 
-            // Fetch report title if attached
+            // Fetch report title through reports -> items
             let reportTitle = 'Campus Lost & Found Inquiry';
+
             if (conv.report_id) {
               const { data: report } = await supabase
                 .from('reports')
-                .select('title')
+                .select('item_id')
                 .eq('id', conv.report_id)
                 .maybeSingle();
-              if (report) reportTitle = report.title;
-            }
 
+              if (report?.item_id) {
+                const { data: item } = await supabase
+                  .from('items')
+                  .select('title')
+                  .eq('id', report.item_id)
+                  .maybeSingle();
+
+                if (item?.title) {
+                  reportTitle = item.title;
+                }
+              }
+            }
             return {
               ...conv,
               report_title: reportTitle,
@@ -98,7 +109,15 @@ export const messagingService = {
         .order('created_at', { ascending: true });
 
       if (!error && data) {
-        return data as ChatMessage[];
+        return data.map((message: any) => ({
+          id: message.id,
+          conversation_id: message.conversation_id,
+          sender_id: message.sender_id,
+          content: message.body,
+          attachment_url: message.attachment_path,
+          is_read: message.is_read,
+          created_at: message.created_at,
+        }));
       }
     } catch (err) {
       console.error('Error fetching messages:', err);
@@ -134,7 +153,7 @@ export const messagingService = {
             requester_id: requesterId,
             reporter_id: reporterId,
             status: 'PENDING',
-            requester_message_count: 0,
+            preliminary_message_count: 0,
           },
         ])
         .select('id, status')
@@ -178,7 +197,7 @@ export const messagingService = {
             if (conv.status === 'DECLINED' || conv.status === 'REVOKED' || conv.status === 'CLOSED') {
               return { success: false, error: 'Chat access has been revoked.' };
             }
-            if (conv.status === 'PENDING' && conv.requester_id === senderId && conv.requester_message_count >= 2) {
+            if (conv.status === 'PENDING' && conv.requester_id === senderId && conv.preliminary_message_count >= 2) {
               return {
                 success: false,
                 error: 'Preliminary limit of 2 messages reached. Awaiting finder response before further messages can be sent.',
@@ -190,15 +209,15 @@ export const messagingService = {
               {
                 conversation_id: conversationId,
                 sender_id: senderId,
-                content,
-                attachment_url: attachmentUrl,
+                body: content,
+                attachment_path: attachmentUrl,
               },
             ]);
 
             // Update conversation
             const updates: any = { updated_at: new Date().toISOString() };
             if (conv.requester_id === senderId) {
-              updates.requester_message_count = (conv.requester_message_count || 0) + 1;
+              updates.preliminary_message_count = (conv.preliminary_message_count || 0) + 1;
             } else if (conv.status === 'PENDING') {
               updates.status = 'ACTIVE';
             }

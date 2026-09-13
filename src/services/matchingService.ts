@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { reportsService } from './reportsService';
 import type { ReportItem } from './reportsService';
 
 export interface MatchReason {
@@ -117,7 +118,43 @@ export const matchingService = {
     } catch {
       // Fallback
     }
-    return [];
+
+    // Client-side fallback matching engine across active campus reports
+    try {
+      const allReports = await reportsService.getReports({ status: 'ACTIVE' });
+      const currentReport = allReports.find((r) => r.id === reportId);
+      if (!currentReport) return [];
+
+      const oppositeType = currentReport.type === 'LOST' ? 'FOUND' : 'LOST';
+      const candidateReports = allReports.filter((r) => r.type === oppositeType && r.id !== reportId);
+
+      const computedMatches: MatchRecord[] = [];
+      for (const candidate of candidateReports) {
+        const scoreReason = this.calculateScore(
+          currentReport.type === 'LOST' ? currentReport : candidate,
+          currentReport.type === 'LOST' ? candidate : currentReport
+        );
+
+        if (scoreReason.total_score >= 30) {
+          computedMatches.push({
+            id: `match_${currentReport.id}_${candidate.id}`,
+            lost_report_id: currentReport.type === 'LOST' ? currentReport.id : candidate.id,
+            found_report_id: currentReport.type === 'LOST' ? candidate.id : currentReport.id,
+            score: scoreReason.total_score,
+            status: 'SUGGESTED',
+            match_reasons: scoreReason,
+            lost_report: currentReport.type === 'LOST' ? currentReport : candidate,
+            found_report: currentReport.type === 'LOST' ? candidate : currentReport,
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
+
+      computedMatches.sort((a, b) => b.score - a.score);
+      return computedMatches;
+    } catch {
+      return [];
+    }
   },
 
   async confirmMatch(matchId: string, actorId: string): Promise<boolean> {

@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, avatar_url, role, created_at')
+      .select('id, email, full_name, avatar_url, department_id, phone, is_active, created_at, updated_at')
       .eq('id', currentUser.id)
       .maybeSingle();
 
@@ -41,7 +41,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setProfile(data as Profile | null);
+    if (!data) {
+      setProfile(null);
+      return;
+    }
+
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('roles(name)')
+      .eq('profile_id', currentUser.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (roleError) {
+      console.error('Error loading user role:', roleError);
+    }
+
+    const dbRole = roleData?.roles?.[0]?.name?.toLowerCase();
+
+    const appRole: UserRole =
+      dbRole === 'super_admin' || dbRole === 'super_administrator'
+        ? 'super_admin'
+        : dbRole === 'administrator'
+          ? 'admin'
+          : 'user';
+
+    const profileWithRole = {
+      ...data,
+      role: appRole,
+    };
+
+    setProfile(profileWithRole as Profile);
   }, []);
 
   const refreshUser = useCallback(async () => {
