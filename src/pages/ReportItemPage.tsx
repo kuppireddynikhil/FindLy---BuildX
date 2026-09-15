@@ -204,20 +204,18 @@ export function ReportItemPage() {
           ].map((s) => (
             <div key={s.num} className="flex items-center gap-2">
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                  step === s.num
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${step === s.num
                     ? 'bg-primary-500 text-white shadow-sm ring-2 ring-primary-100'
                     : step > s.num
-                    ? 'bg-success text-white'
-                    : 'bg-surface-subtle text-text-disabled border border-border-default'
-                }`}
+                      ? 'bg-success text-white'
+                      : 'bg-surface-subtle text-text-disabled border border-border-default'
+                  }`}
               >
                 {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : s.num}
               </div>
               <span
-                className={`text-xs hidden sm:inline ${
-                  step === s.num ? 'font-bold text-text-primary' : 'text-text-secondary'
-                }`}
+                className={`text-xs hidden sm:inline ${step === s.num ? 'font-bold text-text-primary' : 'text-text-secondary'
+                  }`}
               >
                 {s.label}
               </span>
@@ -240,11 +238,10 @@ export function ReportItemPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div
                   onClick={() => setReportType('LOST')}
-                  className={`p-5 rounded-lg border-2 cursor-pointer transition-all ${
-                    reportType === 'LOST'
+                  className={`p-5 rounded-lg border-2 cursor-pointer transition-all ${reportType === 'LOST'
                       ? 'border-warning bg-[#FBF0DD]/30 shadow-soft'
                       : 'border-border-default hover:border-slate-300'
-                  }`}
+                    }`}
                 >
                   <div className="w-10 h-10 rounded-full bg-[#FBF0DD] text-warning flex items-center justify-center mb-3">
                     <AlertCircle className="w-5 h-5" />
@@ -257,11 +254,10 @@ export function ReportItemPage() {
 
                 <div
                   onClick={() => setReportType('FOUND')}
-                  className={`p-5 rounded-lg border-2 cursor-pointer transition-all ${
-                    reportType === 'FOUND'
+                  className={`p-5 rounded-lg border-2 cursor-pointer transition-all ${reportType === 'FOUND'
                       ? 'border-primary-500 bg-primary-50/50 shadow-soft'
                       : 'border-border-default hover:border-slate-300'
-                  }`}
+                    }`}
                 >
                   <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mb-3">
                     <CheckCircle2 className="w-5 h-5" />
@@ -553,9 +549,8 @@ export function ReportItemPage() {
                 <div className="flex items-center justify-between pb-2 border-b border-border-default">
                   <span className="text-text-secondary">Report Type:</span>
                   <span
-                    className={`font-bold px-2 py-0.5 rounded-full ${
-                      reportType === 'LOST' ? 'bg-[#FBF0DD] text-[#B7791F]' : 'bg-[#EEF5FF] text-[#2F7BFF]'
-                    }`}
+                    className={`font-bold px-2 py-0.5 rounded-full ${reportType === 'LOST' ? 'bg-[#FBF0DD] text-[#B7791F]' : 'bg-[#EEF5FF] text-[#2F7BFF]'
+                      }`}
                   >
                     {reportType === 'LOST' ? 'Lost Item Report' : 'Found Item Report'}
                   </span>

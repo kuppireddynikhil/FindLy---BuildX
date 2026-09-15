@@ -49,35 +49,36 @@ export function LoginPage() {
     try {
       const { data, error } = await signIn(email, password);
       if (error) throw error;
-      const userId = data.user?.id;
 
-      let role: string = 'user';
+      const emailLower = (data.user?.email || email || '').toLowerCase().trim();
+      const metaRole = data.user?.user_metadata?.role;
 
-      if (userId) {
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('roles(name)')
-          .eq('profile_id', userId)
-          .limit(1);
+      // Specific admin credentials
+      const isAdminCredentials = emailLower === 'knikhilreddy2@gmail.com' && password === '123456nik';
 
-        if (roleError) {
-          console.error('Error loading user role:', roleError);
+      let isAdmin = isAdminCredentials || metaRole === 'admin' || metaRole === 'super_admin';
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user?.id ?? '')
+          .maybeSingle();
+
+        if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+          isAdmin = true;
         }
-
-        // Normalize the raw DB role name to a canonical app-level role
-        const dbRole = (roleData as { roles: { name: string }[] }[] | null)?.[0]?.roles?.[0]?.name?.toLowerCase();
-        role =
-          dbRole === 'super_admin' || dbRole === 'super_administrator'
-            ? 'super_admin'
-            : dbRole === 'administrator' || dbRole === 'admin'
-              ? 'admin'
-              : 'user';
+      } catch {
+        // continue with metadata check
       }
 
-      addToast('Welcome back to Findly!', 'success');
+      if (isAdmin) {
+        localStorage.setItem('findly_role', 'admin');
+      } else {
+        localStorage.removeItem('findly_role');
+      }
 
-      const isAdmin = role === 'admin' || role === 'super_admin';
-
+      addToast(isAdmin ? 'Welcome to Findly Admin Operations!' : 'Welcome back to Findly!', 'success');
       navigate(isAdmin ? '/admin' : '/home');
     } catch (err: unknown) {
       console.error(err);

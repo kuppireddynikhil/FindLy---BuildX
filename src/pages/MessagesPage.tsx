@@ -106,7 +106,7 @@ export function MessagesPage() {
   const isRequester = user && activeConv && user.id === activeConv.requester_id;
   const isPending = activeConv?.status === 'PENDING';
   const isRevoked = activeConv?.status === 'REVOKED' || activeConv?.status === 'DECLINED' || activeConv?.status === 'CLOSED';
-  const requesterLimitReached = isRequester && isPending && (activeConv?.preliminary_message_count || 0) >= 2;
+  const requesterLimitReached = isRequester && isPending && (activeConv?.requester_message_count || 0) >= 2;
 
   return (
     <div className="min-h-screen bg-[#F5F8FC] py-6">
@@ -226,7 +226,7 @@ export function MessagesPage() {
                     <div className="p-3 bg-[#EEF5FF] border-b border-[#DCEAFF] text-xs text-primary-800 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5 text-primary-600" />
-                        Preliminary Limit: {activeConv.preliminary_message_count}/2 messages sent.
+                        Preliminary Limit: {activeConv.requester_message_count}/2 messages sent.
                       </span>
                       <span className="text-[11px] font-medium text-text-secondary">
                         Awaiting responder acceptance
