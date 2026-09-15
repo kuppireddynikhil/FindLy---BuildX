@@ -29,49 +29,93 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, email, full_name, avatar_url, department_id, phone, is_active, created_at, updated_at')
-      .eq('id', currentUser.id)
-      .maybeSingle();
+    let userRole: UserRole = 'user';
+    const emailLower = (currentUser.email || '').toLowerCase();
 
-    if (error) {
-      console.error('Error loading user profile:', error);
-      setProfile(null);
-      return;
+    // 1. Check user or app metadata
+    if (currentUser.user_metadata?.role) {
+      userRole = currentUser.user_metadata.role as UserRole;
+    } else if (currentUser.app_metadata?.role) {
+      userRole = currentUser.app_metadata.role as UserRole;
     }
 
-    if (!data) {
-      setProfile(null);
-      return;
+    // 2. Check designated admin account
+    if (emailLower === 'knikhilreddy2@gmail.com') {
+      userRole = 'admin';
     }
 
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('roles(name)')
-      .eq('profile_id', currentUser.id)
-      .limit(1)
-      .maybeSingle();
-
-    if (roleError) {
-      console.error('Error loading user role:', roleError);
+    // 3. Check localStorage role override
+    const storedRole = localStorage.getItem('findly_role');
+    if (storedRole === 'admin' || storedRole === 'super_admin') {
+      userRole = storedRole as UserRole;
     }
 
-    const dbRole = roleData?.roles?.[0]?.name?.toLowerCase();
+    let userProfile: Profile | null = null;
 
-    const appRole: UserRole =
-      dbRole === 'super_admin' || dbRole === 'super_administrator'
-        ? 'super_admin'
-        : dbRole === 'administrator'
-          ? 'admin'
-          : 'user';
+    // 4. Safely query profiles table
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .maybeSingle();
 
-    const profileWithRole = {
-      ...data,
-      role: appRole,
-    };
+      if (!error && data) {
+        userProfile = {
+          id: data.id,
+          email: data.email || currentUser.email || '',
+          full_name: data.full_name || currentUser.user_metadata?.full_name || 'SVCE Member',
+          avatar_url: data.avatar_url || currentUser.user_metadata?.avatar_url || null,
+          role: (data.role as UserRole) || userRole,
+          created_at: data.created_at || new Date().toISOString(),
+        };
+        if (data.role) {
+          userRole = data.role as UserRole;
+        }
+      } else {
+        userProfile = {
+          id: currentUser.id,
+          email: currentUser.email || '',
+          full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'SVCE Member',
+          avatar_url: currentUser.user_metadata?.avatar_url || null,
+          role: userRole,
+          created_at: new Date().toISOString(),
+        };
+      }
+    } catch {
+      userProfile = {
+        id: currentUser.id,
+        email: currentUser.email || '',
+        full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'SVCE Member',
+        avatar_url: currentUser.user_metadata?.avatar_url || null,
+        role: userRole,
+        created_at: new Date().toISOString(),
+      };
+    }
 
-    setProfile(profileWithRole as Profile);
+    // 5. Check relational user_roles table if present
+    try {
+      const { data: urData } = await supabase
+        .from('user_roles')
+        .select('role_id, roles(name)')
+        .eq('profile_id', currentUser.id);
+
+      if (urData && urData.length > 0) {
+        const hasAdminRole = urData.some((ur: any) => {
+          const rName = (ur.roles?.name || '').toLowerCase();
+          return rName === 'admin' || rName === 'super_admin';
+        });
+        if (hasAdminRole) userRole = 'admin';
+      }
+    } catch {
+      // ignore
+    }
+
+    if (userProfile) {
+      userProfile.role = userRole;
+    }
+
+    setProfile(userProfile);
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -89,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
+      localStorage.removeItem('findly_role');
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (err) {

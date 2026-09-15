@@ -42,6 +42,28 @@ export function AdminAnalyticsPage() {
     loadAnalytics();
   }, [dateRange]);
 
+  // Dynamic calculations from database reports
+  const totalReports = reports.length;
+  const recoveredReports = reports.filter((r) => r.status === 'RECOVERED');
+  const recoveryRatePct = totalReports > 0
+    ? `${((recoveredReports.length / totalReports) * 100).toFixed(1)}%`
+    : '0.0%';
+
+  // Average resolution time for recovered reports
+  const resolutionTimes = recoveredReports
+    .map((r) => {
+      const start = new Date(r.created_at).getTime();
+      const end = new Date(r.updated_at || r.created_at).getTime();
+      return Math.max(0, end - start) / (1000 * 60 * 60 * 24);
+    })
+    .filter((t) => !isNaN(t));
+
+  const avgResolutionDays = resolutionTimes.length > 0
+    ? `${(resolutionTimes.reduce((a, b) => a + b, 0) / resolutionTimes.length).toFixed(1)} Days`
+    : totalReports > 0
+    ? 'In Progress'
+    : '0.0 Days';
+
   // Aggregate Category Breakdown from real database reports
   const categoryCounts = reports.reduce((acc: Record<string, number>, r) => {
     const cat = r.category || 'Other';
@@ -50,7 +72,6 @@ export function AdminAnalyticsPage() {
   }, {});
 
   const sortedCategories = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
-  const totalReports = reports.length || 1;
 
   // Aggregate Location Breakdown from real database reports
   const locationCounts = reports.reduce((acc: Record<string, number>, r) => {
@@ -59,6 +80,66 @@ export function AdminAnalyticsPage() {
     return acc;
   }, {});
   const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
+
+  // Dynamic Time Buckets for the Bar Graph based on dateRange
+  const now = new Date();
+  let timeBuckets: { label: string; count: number }[] = [];
+
+  if (dateRange === '7d') {
+    timeBuckets = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (6 - i));
+      const dateStr = d.toISOString().split('T')[0];
+      const count = reports.filter((r) => (r.created_at || '').split('T')[0] === dateStr).length;
+      return {
+        label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        count,
+      };
+    });
+  } else if (dateRange === '30d') {
+    // 4 weeks
+    timeBuckets = [
+      { label: 'Week 1', count: 0 },
+      { label: 'Week 2', count: 0 },
+      { label: 'Week 3', count: 0 },
+      { label: 'Week 4', count: 0 },
+    ];
+    reports.forEach((r) => {
+      const daysAgo = Math.floor((now.getTime() - new Date(r.created_at).getTime()) / (1000 * 60 * 60 * 24));
+      if (daysAgo >= 0 && daysAgo < 7) timeBuckets[3].count++;
+      else if (daysAgo >= 7 && daysAgo < 14) timeBuckets[2].count++;
+      else if (daysAgo >= 14 && daysAgo < 21) timeBuckets[1].count++;
+      else if (daysAgo >= 21 && daysAgo < 30) timeBuckets[0].count++;
+    });
+  } else {
+    // 90d -> 3 Months
+    timeBuckets = Array.from({ length: 3 }, (_, i) => {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - (2 - i));
+      const monthLabel = d.toLocaleDateString('en-US', { month: 'short' });
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const count = reports.filter((r) => {
+        const repDate = new Date(r.created_at);
+        return repDate.getFullYear() === year && repDate.getMonth() === month;
+      }).length;
+      return { label: monthLabel, count };
+    });
+  }
+
+  const maxBucketCount = Math.max(...timeBuckets.map((b) => b.count), 1);
+  const chartColumns = timeBuckets.map((b) => ({
+    label: b.label,
+    val: b.count,
+    height: b.count === 0 ? '6px' : `${Math.max(16, Math.round((b.count / maxBucketCount) * 100))}%`,
+  }));
+
+  const peakHotspot = sortedLocations[0];
+  const peakHotspotText = peakHotspot
+    ? `Peak: ${peakHotspot[0]} (${peakHotspot[1]} Reports)`
+    : totalReports > 0
+    ? `Total: ${totalReports} Reports`
+    : 'No incidents logged in range';
 
   return (
     <AdminLayout>
@@ -107,17 +188,17 @@ export function AdminAnalyticsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <AdminStatCard
               title="Campus Recovery Rate"
-              value="88.4%"
+              value={recoveryRatePct}
               icon={ShieldCheck}
-              trend="+3.2% vs last term"
-              trendPositive={true}
+              trend={`${recoveredReports.length} of ${totalReports} resolved`}
+              trendPositive={recoveredReports.length > 0}
               subtext="Ratio of resolved claims"
             />
             <AdminStatCard
               title="Avg. Resolution Time"
-              value="2.8 Days"
+              value={avgResolutionDays}
               icon={Clock}
-              trend="-0.5 days"
+              trend={recoveredReports.length > 0 ? 'Handover completed' : 'Awaiting claims'}
               trendPositive={true}
               subtext="From report to handover"
             />
@@ -125,7 +206,7 @@ export function AdminAnalyticsPage() {
               title="Active Campus Reports"
               value={kpis.activeReports}
               icon={TrendingUp}
-              trend="Telemetry Live"
+              trend={kpis.activeReports > 0 ? 'Telemetry Live' : 'Feed Clear'}
               trendPositive={true}
               subtext="Visible on explorer"
             />
@@ -133,8 +214,8 @@ export function AdminAnalyticsPage() {
               title="Total Campus Users"
               value={kpis.totalUsers}
               icon={Users}
-              trend="Active Accounts"
-              trendPositive={true}
+              trend={kpis.totalUsers > 0 ? `${kpis.totalUsers} Active Profiles` : 'Awaiting Registrations'}
+              trendPositive={kpis.totalUsers > 0}
               subtext="Students, staff & faculty"
             />
           </div>
@@ -147,29 +228,24 @@ export function AdminAnalyticsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-text-primary">Report Trends Over Time</h3>
-                <p className="text-xs text-text-secondary">Incident volume distribution across recent days</p>
+                <p className="text-xs text-text-secondary">Incident volume distribution across recent periods</p>
               </div>
               <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-2.5 py-1 rounded-full border border-primary-200">
-                Peak: Central Library (Wed)
+                {peakHotspotText}
               </span>
             </div>
 
             <div className="h-64 bg-surface-subtle rounded-lg p-4 flex flex-col justify-between border border-border-default">
               <div className="flex-1 flex items-end justify-between gap-3 pt-6 pb-2">
-                {[
-                  { label: 'Week 1', val: 18, height: '45%' },
-                  { label: 'Week 2', val: 26, height: '65%' },
-                  { label: 'Week 3', val: 34, height: '85%' },
-                  { label: 'Week 4', val: 40, height: '100%' },
-                  { label: 'Week 5', val: 28, height: '70%' },
-                  { label: 'Week 6', val: 14, height: '35%' },
-                ].map((col) => (
+                {chartColumns.map((col) => (
                   <div key={col.label} className="flex-1 flex flex-col items-center gap-1 group">
                     <div
-                      className="w-full bg-[#DCEAFF] hover:bg-primary-500 rounded-t transition-all relative flex items-end"
+                      className={`w-full rounded-t transition-all relative flex items-end ${
+                        col.val > 0 ? 'bg-[#DCEAFF] hover:bg-primary-500' : 'bg-slate-200'
+                      }`}
                       style={{ height: col.height }}
                     >
-                      <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity">
+                      <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity pointer-events-none">
                         {col.val}
                       </span>
                     </div>
@@ -178,8 +254,8 @@ export function AdminAnalyticsPage() {
                 ))}
               </div>
               <div className="pt-2 border-t border-border-default flex items-center justify-between text-[10px] text-text-disabled">
-                <span>Beginning of Term</span>
-                <span>Active Week</span>
+                <span>Start of Window</span>
+                <span>Current Date</span>
               </div>
             </div>
           </div>
@@ -190,23 +266,29 @@ export function AdminAnalyticsPage() {
             <p className="text-xs text-text-secondary">Percentage share by item category</p>
 
             <div className="space-y-3 pt-2">
-              {sortedCategories.slice(0, 5).map(([cat, count]) => {
-                const pct = Math.round((count / totalReports) * 100);
-                return (
-                  <div key={cat} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-text-primary truncate">{cat}</span>
-                      <span className="text-text-secondary font-mono">{pct}% ({count})</span>
+              {sortedCategories.length === 0 ? (
+                <div className="text-xs text-text-disabled py-8 text-center">
+                  No category telemetry available yet.
+                </div>
+              ) : (
+                sortedCategories.slice(0, 5).map(([cat, count]) => {
+                  const pct = totalReports > 0 ? Math.round((count / totalReports) * 100) : 0;
+                  return (
+                    <div key={cat} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-text-primary truncate">{cat}</span>
+                        <span className="text-text-secondary font-mono">{pct}% ({count})</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary-500 rounded-full"
+                          style={{ width: `${Math.max(5, pct)}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary-500 rounded-full"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -219,54 +301,76 @@ export function AdminAnalyticsPage() {
             <p className="text-xs text-text-secondary">Campus buildings with highest lost & found registration</p>
 
             <div className="space-y-3 pt-2">
-              {sortedLocations.slice(0, 5).map(([loc, count]) => {
-                const pct = Math.round((count / totalReports) * 100);
-                return (
-                  <div key={loc} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-text-primary flex items-center gap-1.5 truncate">
-                        <MapPin className="w-3.5 h-3.5 text-primary-500 flex-shrink-0" />
-                        {loc}
-                      </span>
-                      <span className="text-text-secondary font-mono">{count} reports</span>
+              {sortedLocations.length === 0 ? (
+                <div className="text-xs text-text-disabled py-8 text-center">
+                  No campus location telemetry available yet.
+                </div>
+              ) : (
+                sortedLocations.slice(0, 5).map(([loc, count]) => {
+                  const pct = totalReports > 0 ? Math.round((count / totalReports) * 100) : 0;
+                  return (
+                    <div key={loc} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-text-primary flex items-center gap-1.5 truncate">
+                          <MapPin className="w-3.5 h-3.5 text-primary-500 flex-shrink-0" />
+                          {loc}
+                        </span>
+                        <span className="text-text-secondary font-mono">{count} reports</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary-600 rounded-full"
+                          style={{ width: `${Math.max(10, pct)}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary-600 rounded-full"
-                        style={{ width: `${Math.max(10, pct)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
-          {/* System Insights */}
+          {/* Dynamic System Insights */}
           <div className="bg-white rounded-xl p-6 border border-border-default shadow-card space-y-4">
             <h3 className="text-sm font-bold text-text-primary">System Insights & Recommendations</h3>
             <div className="space-y-3 text-xs">
               <div className="p-3.5 bg-primary-50/60 rounded-lg border border-primary-100 flex items-start gap-3">
                 <Sparkles className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-primary-900 block">High Accuracy in Electronics</span>
-                  Keyword and category similarity achieved a 94% confirmation accuracy across laptops and smartphones.
+                  <span className="font-bold text-primary-900 block">
+                    {sortedCategories.length > 0
+                      ? `Dominant Category: ${sortedCategories[0][0]}`
+                      : 'AI Category Matching Active'}
+                  </span>
+                  {sortedCategories.length > 0
+                    ? `${sortedCategories[0][0]} accounts for ${Math.round((sortedCategories[0][1] / Math.max(totalReports, 1)) * 100)}% (${sortedCategories[0][1]} items) of all campus submissions.`
+                    : 'System classification is active and ready to categorize incoming student and staff reports.'}
                 </div>
               </div>
 
               <div className="p-3.5 bg-amber-50/60 rounded-lg border border-amber-200 flex items-start gap-3">
                 <Calendar className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-amber-900 block">Peak Lost Period: Mid-Semester Exams</span>
-                  Submissions at Central Library spike by 40% during exam revision weeks. Additional security desk checks recommended.
+                  <span className="font-bold text-amber-900 block">
+                    {sortedLocations.length > 0
+                      ? `Primary Hotspot: ${sortedLocations[0][0]}`
+                      : 'Hotspot Surveillance Active'}
+                  </span>
+                  {sortedLocations.length > 0
+                    ? `${sortedLocations[0][0]} has recorded ${sortedLocations[0][1]} reports. Security desks are advised to inspect items deposited here.`
+                    : 'Facility telemetry maps lost & found incidents to campus buildings and zones automatically.'}
                 </div>
               </div>
 
               <div className="p-3.5 bg-emerald-50/60 rounded-lg border border-emerald-200 flex items-start gap-3">
                 <ShieldCheck className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-emerald-900 block">98% Handover Verification Rate</span>
-                  Identity verification before security desk handover prevented unauthorized claim attempts.
+                  <span className="font-bold text-emerald-900 block">
+                    {totalReports > 0 ? `${recoveryRatePct} Resolution Rate` : 'Secure Handover Ready'}
+                  </span>
+                  {totalReports > 0
+                    ? `${recoveredReports.length} of ${totalReports} reported items have been verified and returned to their verified owners.`
+                    : 'Identity verification and custody handovers ready for campus operations.'}
                 </div>
               </div>
             </div>

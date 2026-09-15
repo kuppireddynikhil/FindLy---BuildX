@@ -49,12 +49,12 @@ export const adminService = {
       const { count: lostCount } = await supabase
         .from('reports')
         .select('*', { count: 'exact', head: true })
-        .eq('type', 'LOST');
+        .ilike('type', 'LOST');
 
       const { count: foundCount } = await supabase
         .from('reports')
         .select('*', { count: 'exact', head: true })
-        .eq('type', 'FOUND');
+        .ilike('type', 'FOUND');
 
       const { count: activeCount } = await supabase
         .from('reports')
@@ -72,10 +72,10 @@ export const adminService = {
         .select('*', { count: 'exact', head: true });
 
       const totalRep = (lostCount || 0) + (foundCount || 0);
-      const matchRate = totalRep > 0 ? Math.round(((matchesCount || 0) * 2 / totalRep) * 100) : 68;
+      const matchRate = totalRep > 0 ? Math.round(((matchesCount || 0) * 2 / totalRep) * 100) : 0;
 
       return {
-        totalUsers: usersCount || 1,
+        totalUsers: usersCount || 0,
         lostReports: lostCount || 0,
         foundReports: foundCount || 0,
         matchRate: Math.min(100, matchRate),
@@ -85,7 +85,7 @@ export const adminService = {
     } catch (err) {
       console.error('Error fetching admin KPIs:', err);
       return {
-        totalUsers: 1,
+        totalUsers: 0,
         lostReports: 0,
         foundReports: 0,
         matchRate: 0,
@@ -98,64 +98,49 @@ export const adminService = {
   // 2. Fetch user statistics with exact Lost, Found, and Total counts
   async getUserStatistics(search?: string): Promise<AdminUserStat[]> {
     try {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select()
-        .order('created_at', { ascending: false });
-
-      if (profilesError) throw profilesError;
-
-      const filteredProfiles = search
-        ? (profiles || []).filter((p: any) =>
-            (p.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
-            (p.email || '').toLowerCase().includes(search.toLowerCase())
-          )
-        : (profiles || []);
-
-      const { data: allReports, error: reportsError } = await supabase
-        .from('reports')
-        .select('reporter_id, type');
-
-      if (reportsError) throw reportsError;
-
-      return filteredProfiles.map((p: any) => {
-        const userReports = (allReports || []).filter(
-          (r: any) => r.reporter_id === p.id
-        );
-
-        const lostCount = userReports.filter(
-          (r: any) => r.type === 'LOST'
-        ).length;
-
-        const foundCount = userReports.filter(
-          (r: any) => r.type === 'FOUND'
-        ).length;
-
-        const dbRole = p.user_roles?.[0]?.roles?.[0]?.name?.toLowerCase();
-
-        const role =
-          dbRole === 'super_admin' || dbRole === 'super_administrator'
-            ? 'super_admin'
-            : dbRole === 'administrator'
-              ? 'admin'
-              : 'user';
-
-        return {
-          profile_id: p.id,
-          email: p.email,
-          full_name: p.full_name || 'SVCE Student',
-          username: p.email?.split('@')[0] || 'student',
-          phone: p.phone || undefined,
-          department: p.departments?.name || 'SVCE Engineering',
-          role,
-          is_active: p.is_active !== false,
-          account_status: p.is_active === false ? 'disabled' : 'active',
-          joined_date: p.created_at,
-          lost_reports_count: lostCount,
-          found_reports_count: foundCount,
-          total_reports_count: lostCount + foundCount,
-        };
+      // Try calling RPC get_admin_user_statistics
+      const { data, error } = await supabase.rpc('get_admin_user_statistics', {
+        p_search: search || null,
+        p_role_filter: null,
       });
+
+      if (!error && data && data.length > 0) {
+        return data as AdminUserStat[];
+      }
+
+      // Query profiles and calculate aggregate counts
+      let query = supabase.from('profiles').select('*');
+      if (search) {
+        query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,username.ilike.%${search}%`);
+      }
+      const { data: profiles } = await query;
+
+      if (profiles && profiles.length > 0) {
+        // Fetch all reports to aggregate per user
+        const { data: allReports } = await supabase.from('reports').select('reporter_id, type');
+
+        return profiles.map((p: any) => {
+          const userReports = (allReports || []).filter((r: any) => r.reporter_id === p.id);
+          const lostCount = userReports.filter((r: any) => (r.type || '').toUpperCase() === 'LOST').length;
+          const foundCount = userReports.filter((r: any) => (r.type || '').toUpperCase() === 'FOUND').length;
+
+          return {
+            profile_id: p.id,
+            email: p.email,
+            full_name: p.full_name || p.email?.split('@')[0] || 'User',
+            username: p.username || p.email?.split('@')[0],
+            phone: p.phone,
+            department: p.department || 'General Campus',
+            role: p.role || 'user',
+            is_active: p.is_active !== false && p.account_status !== 'disabled',
+            account_status: p.account_status || 'active',
+            joined_date: p.created_at,
+            lost_reports_count: lostCount,
+            found_reports_count: foundCount,
+            total_reports_count: lostCount + foundCount,
+          };
+        });
+      }
     } catch (err) {
       console.error('Error fetching admin user statistics:', err);
     }

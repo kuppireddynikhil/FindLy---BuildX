@@ -210,7 +210,7 @@ export const campusService = {
 
   async createLocation(locationData: Omit<CampusLocation, 'id'>, actorId?: string): Promise<{ success: boolean; data?: CampusLocation; error?: string }> {
     try {
-      const newId = `svce-loc-${Date.now()}`;
+      const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `00000000-0000-4000-8000-${Date.now().toString(16).padStart(12, '0')}`;
       const payload = {
         id: newId,
         ...locationData,
@@ -224,11 +224,11 @@ export const campusService = {
         .single();
 
       if (error) {
-        // Fallback for demo or when table is missing
+        console.warn('Campus location database insert error:', error.message);
         return { success: true, data: payload as CampusLocation };
       }
 
-      if (actorId) {
+      if (actorId && data) {
         await supabase.from('audit_logs').insert([{
           actor_id: actorId,
           action: 'CAMPUS_LOCATION_CREATED',
@@ -239,7 +239,7 @@ export const campusService = {
         }]);
       }
 
-      return { success: true, data: data as CampusLocation };
+      return { success: true, data: (data || payload) as CampusLocation };
     } catch (err: any) {
       return { success: false, error: err.message || 'Failed to create campus location' };
     }

@@ -28,6 +28,7 @@ export function AdminDashboardPage() {
     activeReports: 0,
     recoveryCases: 0,
   });
+  const [allReports, setAllReports] = useState<ReportItem[]>([]);
   const [recentReports, setRecentReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,6 +39,7 @@ export function AdminDashboardPage() {
       reportsService.getReports({}),
     ]);
     setKpis(kpiData);
+    setAllReports(reportsData);
     setRecentReports(reportsData.slice(0, 6));
     setLoading(false);
   };
@@ -45,6 +47,58 @@ export function AdminDashboardPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Compute dynamic 7-day trend metrics from database reports
+  const now = new Date();
+  const past7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayCount = allReports.filter((r) => {
+      const repDate = (r.created_at || r.date || '').split('T')[0];
+      return repDate === dateStr;
+    }).length;
+    return { day: dayName, dateStr, count: dayCount };
+  });
+
+  const maxDayCount = Math.max(...past7Days.map((d) => d.count), 1);
+  const trendBars = past7Days.map((d) => ({
+    ...d,
+    height: d.count === 0 ? '6px' : `${Math.max(16, Math.round((d.count / maxDayCount) * 100))}%`,
+  }));
+
+  // Dynamic Resolution Rate
+  const resolvedCount = allReports.filter((r) => r.status === 'RECOVERED').length;
+  const resolutionRate = allReports.length > 0 ? Math.round((resolvedCount / allReports.length) * 100) : 0;
+
+  // Dynamic Hotspot / Peak in the 7 days
+  const weekLocationCounts: Record<string, number> = {};
+  allReports.forEach((r) => {
+    const repDate = (r.created_at || r.date || '').split('T')[0];
+    if (repDate >= past7Days[0].dateStr && repDate <= past7Days[6].dateStr) {
+      const loc = r.building || 'SVCE Campus';
+      weekLocationCounts[loc] = (weekLocationCounts[loc] || 0) + 1;
+    }
+  });
+
+  const topWeekLocation = Object.entries(weekLocationCounts).sort((a, b) => b[1] - a[1])[0];
+  const peakTelemetryText = topWeekLocation
+    ? `Peak: ${topWeekLocation[1]} Reports (${topWeekLocation[0]})`
+    : allReports.length > 0
+    ? `Total Reports: ${allReports.length}`
+    : 'No reports logged this week';
+
+  const startDateFormatted = new Date(past7Days[0].dateStr).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  const endDateFormatted = new Date(past7Days[6].dateStr).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
     <AdminLayout>
@@ -90,23 +144,23 @@ export function AdminDashboardPage() {
               title="Total Campus Users"
               value={kpis.totalUsers}
               icon={Users}
-              trend="+14% this month"
-              trendPositive={true}
+              trend={kpis.totalUsers > 0 ? `${kpis.totalUsers} Registered` : 'Awaiting Users'}
+              trendPositive={kpis.totalUsers > 0}
               subtext="Registered students, staff & faculty"
             />
             <AdminStatCard
               title="Active Lost Reports"
               value={kpis.lostReports}
               icon={AlertCircle}
-              trend="Requires investigation"
-              trendPositive={false}
+              trend={kpis.lostReports > 0 ? `${kpis.lostReports} Unresolved` : 'None Pending'}
+              trendPositive={kpis.lostReports === 0}
               subtext="Unresolved lost items"
             />
             <AdminStatCard
               title="Found Items Logged"
               value={kpis.foundReports}
               icon={CheckCircle2}
-              trend="+8% this week"
+              trend={kpis.foundReports > 0 ? `${kpis.foundReports} In Custody` : 'No Items Logged'}
               trendPositive={true}
               subtext="Secured in custody or with finders"
             />
@@ -114,15 +168,15 @@ export function AdminDashboardPage() {
               title="Deterministic Match Rate"
               value={`${kpis.matchRate}%`}
               icon={Sparkles}
-              trend="Algorithm Accuracy"
-              trendPositive={true}
+              trend={kpis.matchRate > 0 ? 'Deterministic Match' : 'Matches Pending'}
+              trendPositive={kpis.matchRate > 0}
               subtext="30/20/20/15/15 scoring accuracy"
             />
             <AdminStatCard
               title="Active Campus Reports"
               value={kpis.activeReports}
               icon={TrendingUp}
-              trend="Broadcast live"
+              trend={kpis.activeReports > 0 ? `${kpis.activeReports} Live` : 'Feed Clear'}
               trendPositive={true}
               subtext="Visible on Campus Feed & Map"
             />
@@ -130,7 +184,7 @@ export function AdminDashboardPage() {
               title="Recovery Cases"
               value={kpis.recoveryCases}
               icon={ShieldCheck}
-              trend="Handover Pipeline"
+              trend={kpis.recoveryCases > 0 ? `${kpis.recoveryCases} In Progress` : 'No Open Claims'}
               trendPositive={true}
               subtext="Claims progressing to handover"
             />
@@ -147,7 +201,7 @@ export function AdminDashboardPage() {
                 <p className="text-xs text-text-secondary">Reported volume vs successful campus handovers</p>
               </div>
               <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                89% Resolution Rate
+                {resolutionRate}% Resolution Rate
               </span>
             </div>
 
@@ -155,23 +209,20 @@ export function AdminDashboardPage() {
             <div className="h-60 bg-surface-subtle rounded-lg p-4 flex flex-col justify-between border border-border-default relative overflow-hidden">
               <div className="flex justify-between text-[11px] text-text-secondary">
                 <span>Items Processed</span>
-                <span className="font-semibold text-primary-600">Peak: 14 Reports/Day (Central Library)</span>
+                <span className="font-semibold text-primary-600">{peakTelemetryText}</span>
               </div>
 
               {/* Vector Smooth Trend Graph */}
               <div className="flex-1 flex items-end justify-between gap-3 pt-6 pb-2">
-                {[
-                  { day: 'Mon', count: 4, height: '40%' },
-                  { day: 'Tue', count: 7, height: '65%' },
-                  { day: 'Wed', count: 12, height: '90%' },
-                  { day: 'Thu', count: 9, height: '75%' },
-                  { day: 'Fri', count: 14, height: '100%' },
-                  { day: 'Sat', count: 6, height: '50%' },
-                  { day: 'Sun', count: 3, height: '30%' },
-                ].map((bar) => (
-                  <div key={bar.day} className="flex-1 flex flex-col items-center gap-1 group">
-                    <div className="w-full bg-[#DCEAFF] hover:bg-primary-500 rounded-t transition-all relative flex items-end" style={{ height: bar.height }}>
-                      <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity">
+                {trendBars.map((bar) => (
+                  <div key={bar.day + bar.dateStr} className="flex-1 flex flex-col items-center gap-1 group">
+                    <div
+                      className={`w-full rounded-t transition-all relative flex items-end ${
+                        bar.count > 0 ? 'bg-[#DCEAFF] hover:bg-primary-500' : 'bg-slate-200'
+                      }`}
+                      style={{ height: bar.height }}
+                    >
+                      <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity pointer-events-none">
                         {bar.count}
                       </span>
                     </div>
@@ -181,8 +232,8 @@ export function AdminDashboardPage() {
               </div>
 
               <div className="pt-2 border-t border-border-default flex items-center justify-between text-[10px] text-text-disabled">
-                <span>Mon, Sep 3</span>
-                <span>Sun, Sep 9</span>
+                <span>{startDateFormatted}</span>
+                <span>{endDateFormatted}</span>
               </div>
             </div>
           </div>
